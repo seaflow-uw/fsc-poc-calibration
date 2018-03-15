@@ -11,7 +11,6 @@ library(caroline)
 dat://cdfef982ea4032592e454c1a39b0a3855738b309d7e78ef8b2d0152adc5ffd02
 
 
-
 ############################
 ## 2. BATCH FILES SEAFLOW ##
 ############################
@@ -96,13 +95,16 @@ write.csv(summary.table,file=paste0(inst, "-summary2.csv", sep=""), row.names=FA
 
 
 #############################
-#### 4. FSC NORMALIZATION ###
+#### 3. FSC NORMALIZATION ###
 #############################
+path.to.git.repository <- "~/Documents/DATA/Codes/fsc-poc-calibration"
+setwd(path.to.git.repository)
+
+### CHOOSE SeaFlow serial number
 inst <- 740
 inst <- 751
-path <- paste("~/Documents/DATA/Codes/fsc-poc-calibration/fsc-poc-calibration-data/harvest/")
-summary <- read.csv(file=paste0(path,inst,"-summary.csv", sep=""))
 
+summary <- read.csv(file=paste0(inst,"-summary.csv", sep=""))
 beads <- subset(summary, i == 'beads')
 cultures <- subset(summary, i == 'picoeuk')
 
@@ -111,18 +113,23 @@ cultures$norm.fsc <- round(cultures$fsc/beads$fsc,2)
 cultures$norm.chl <- round(cultures$fsc/beads$chl,2)
 
 
-write.csv(cultures,file=paste0("~/Documents/DATA/Codes/fsc-poc-calibration/",inst,"-cultures.csv", sep=""), row.names=FALSE)
+write.csv(cultures,file=paste0(inst,"-cultures.csv", sep=""), row.names=FALSE)
 
 
 
 ###########################################
-### 5. MERGE FCM data with POC/PON data ###
+### 4. MERGE FCM data with POC/PON data ###
 ###########################################
+path.to.git.repository <- "~/Documents/DATA/Codes/fsc-poc-calibration"
+setwd(path.to.git.repository)
+
+### CHOOSE SeaFlow serial number
 inst <- 740
 inst <- 751
 
-poc <- read.csv("~/Documents/DATA/Codes/fsc-poc-calibration/Qc-cultures.csv")
-cultures <- read.csv(paste0("~/Documents/DATA/Codes/fsc-poc-calibration/",inst,"-cultures.csv"))
+
+poc <- read.csv("Qc-cultures.csv")
+cultures <- read.csv(paste0(inst,"-cultures.csv"))
 
 if(inst == 740){ cultures$Sample.ID <- c(rep("TW 3365",2),"-" ,rep("NAV",2), "-" ,rep("TAPS 1135",2), rep("-",2),rep("TAPS 3367",2), "-" ,rep("PT 632",2), "-" ,rep("MICRO",2),"-" ,
                                           rep("MED4",2),rep("-",3), rep("AS9601",2),"-" , rep("1314",2),"-" ,rep("MED4",2),"-" ,rep("NAT12A",2),"-" ,rep("WH8102",2), "-" ,rep("7803",2),"-")
@@ -141,16 +148,22 @@ cultures$norm.chl.sd <- cultures.sd$norm.chl
 ### MERGE POC with Cell Abundance
 merge <- merge(poc, cultures, by='Sample.ID')
 
-write.csv(merge[,c("Sample.ID","norm.fsc","norm.fsc.sd","norm.chl","norm.chl.sd","abundance_cells.mL","abundance_cells.mL.sd","pgC.cell","pgN.cell","pgC.cell.sd","pgN.cell.sd")],file=paste0("~/Documents/DATA/Codes/fsc-poc-calibration/",inst,"-Qc-cultures.csv"), row.names=FALSE)
+write.csv(merge[,c("Sample.ID","norm.fsc","norm.fsc.sd","norm.chl","norm.chl.sd","abundance_cells.mL","abundance_cells.mL.sd","pgC.cell","pgN.cell","pgC.cell.sd","pgN.cell.sd")],file=paste0(inst,"-Qc-cultures.csv"), row.names=FALSE)
 
 
 ############################
-### 6. LINEAR REGRESSION ###
+### 5. LINEAR REGRESSION ###
 ############################
 library(lmodel2)
+
+path.to.git.repository <- "~/Documents/DATA/Codes/fsc-poc-calibration"
+setwd(path.to.git.repository)
+
+### CHOOSE SeaFlow serial number
 inst <- 740
 inst <- 751
-merge <- read.csv(paste0("~/Documents/DATA/Codes/fsc-poc-calibration/",inst,"-Qc-cultures.csv"))
+
+merge <- read.csv(paste0(inst,"-Qc-cultures.csv"))
 
 
 merge2 <- subset(merge, Sample.ID !="PT 632")
@@ -161,7 +174,7 @@ reg <- lmodel2(pgC.cell ~ norm.fsc, data=log(merge2[,c("pgC.cell","norm.fsc")],1
 
 
 
-png(paste0("~/Documents/DATA/Codes/fsc-poc-calibration/",inst,"-Qc-scatter.png"),width=12, height=12, unit='in', res=100)
+png(paste0(inst,"-Qc-scatter.png"),width=12, height=12, unit='in', res=100)
 
 par(mfrow=c(1,1), pty='s',cex=1.4)
 plot(merge$norm.fsc,merge$pgC.cell, log='xy', yaxt='n',cex=2,bg='grey', pch=21, ylab=expression(paste("Qc (pgC cell"^{-1},")")), xlab="Normalized scatter (dimensionless)", main=paste0("SeaFlow #",inst))
@@ -181,10 +194,13 @@ dev.off()
 
 
 ##################
-### 7. SUMMARY ###
+### 6. SUMMARY ###
 ##################
-merge1 <- read.csv("~/Documents/DATA/Codes/fsc-poc-calibration/740-Qc-cultures.csv")
-merge2 <- read.csv("~/Documents/DATA/Codes/fsc-poc-calibration/751-Qc-cultures.csv")
+path.to.git.repository <- "~/Documents/DATA/Codes/fsc-poc-calibration"
+setwd(path.to.git.repository)
+
+merge1 <- read.csv("740-Qc-cultures.csv")
+merge2 <- read.csv("751-Qc-cultures.csv")
 merge1 <- subset(merge1, Sample.ID !="PT 632")
 merge2 <- subset(merge2, Sample.ID !="PT 632")
   reg <- lmodel2(pgC.cell ~ norm.fsc, data=log(merge1[,c("pgC.cell","norm.fsc")],10))
@@ -194,13 +210,4 @@ df2 <- data.frame(inst=751, expo=reg$regression.results$Slope[1],expo_97.5=reg$c
 
 df <- rbind(df1,df2)
 
-write.csv(df,file=paste0("~/Documents/DATA/Codes/fsc-poc-calibration/seaflow_qc-calibration.csv"), row.names=FALSE)
-write.csv(df,file=paste0("~/Documents/DATA/Codes/popcycle/inst/Cbiomass/seaflow_qc-calibration.csv"), row.names=FALSE)
-
-
-### CHECK
-df <- read.csv("~/Documents/DATA/Codes/popcycle/inst/Cbiomass/seaflow_qc-calibration.csv")
-
-i <- 2 #740
-scatter <- c(0.04, 0.2, 1,7)
-df[i,"coeff"] * (scatter^df[i,"expo"])
+write.csv(df,file=paste0("seaflow_qc-calibration.csv"), row.names=FALSE)
