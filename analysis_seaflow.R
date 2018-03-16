@@ -168,10 +168,8 @@ merge <- read.csv(paste0(inst,"-Qc-cultures.csv"))
 
 merge2 <- subset(merge, Sample.ID !="PT 632")
 
-# linear regression
+# linear regression type II
 reg <- lmodel2(pgC.cell ~ norm.fsc, data=log(merge2[,c("pgC.cell","norm.fsc")],10))
-#reg2 <- lmodel2(pgC.cell ~ norm.fsc, data=log(merge[,c("pgC.cell","norm.fsc")],10))
-
 
 
 png(paste0(inst,"-Qc-scatter.png"),width=12, height=12, unit='in', res=100)
@@ -188,7 +186,7 @@ abline(b=reg$regression.results$Slope[1], a=reg$regression.results$Intercept[1],
 abline(b=reg$confidence.intervals[1,4], a=reg$confidence.intervals[1,2], col='grey',lwd=2)
 abline(b=reg$confidence.intervals[1,5], a=reg$confidence.intervals[1,3], col='grey',lwd=2)
 #text(log(merge$norm.fsc,10), log(merge$pgC.cell,10), labels=merge$Sample.ID)
-legend("topleft", legend=bquote(paste("Qc=",.(round(reg$regression.results$Intercept[1],3)),"(scatter"^{.(round(reg$regression.results$Slope[1],3))},")")), bty='n',cex=2)
+legend("topleft", legend=bquote(paste("Qc=",.(round(10^reg$regression.results$Intercept[1],3)),"(scatter"^{.(round(reg$regression.results$Slope[1],3))},")")), bty='n',cex=2)
 
 dev.off()
 
@@ -204,9 +202,9 @@ merge2 <- read.csv("751-Qc-cultures.csv")
 merge1 <- subset(merge1, Sample.ID !="PT 632")
 merge2 <- subset(merge2, Sample.ID !="PT 632")
   reg <- lmodel2(pgC.cell ~ norm.fsc, data=log(merge1[,c("pgC.cell","norm.fsc")],10))
-df1 <- data.frame(inst=740, expo=reg$regression.results$Slope[1],expo_97.5=reg$confidence.intervals[1,5],expo_2.5=reg$confidence.intervals[1,4],coeff=reg$regression.results$Intercept[1], coeff_97.5=reg$confidence.intervals[1,3],coeff_2.5=reg$confidence.intervals[1,2])
+df1 <- data.frame(inst=740, expo=reg$regression.results$Slope[1],expo_97.5=reg$confidence.intervals[1,5],expo_2.5=reg$confidence.intervals[1,4],coeff=10^reg$regression.results$Intercept[1], coeff_97.5=10^reg$confidence.intervals[1,3],coeff_2.5=10^reg$confidence.intervals[1,2])
   reg <- lmodel2(pgC.cell ~ norm.fsc, data=log(merge2[,c("pgC.cell","norm.fsc")],10))
-df2 <- data.frame(inst=751, expo=reg$regression.results$Slope[1],expo_97.5=reg$confidence.intervals[1,5],expo_2.5=reg$confidence.intervals[1,4],coeff=reg$regression.results$Intercept[1], coeff_97.5=reg$confidence.intervals[1,3],coeff_2.5=reg$confidence.intervals[1,2])
+df2 <- data.frame(inst=751, expo=reg$regression.results$Slope[1],expo_97.5=reg$confidence.intervals[1,5],expo_2.5=reg$confidence.intervals[1,4],coeff=10^reg$regression.results$Intercept[1], coeff_97.5=10^reg$confidence.intervals[1,3],coeff_2.5=10^reg$confidence.intervals[1,2])
 
 df <- rbind(df1,df2)
 

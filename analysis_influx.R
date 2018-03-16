@@ -225,10 +225,8 @@ merge <- read.csv("Influx-Qc-cultures.csv")
 merge2 <- subset(merge, Sample.ID !="PT 632" & Sample.ID !="EHUX" & Sample.ID !="LICMO")
 
 
-# linear regression
+# linear regression type II
 reg <- lmodel2(pgC.cell ~ norm.fsc, data=log(merge2[,c("pgC.cell","norm.fsc")],10))
-#reg2 <- lmodel2(pgC.cell ~ norm.fsc, data=log(merge[,c("pgC.cell","norm.fsc")],10))
-
 
 
 png("Influx-Qc-scatter.png",width=12, height=12, unit='in', res=100)
@@ -245,6 +243,9 @@ abline(b=reg$regression.results$Slope[1], a=reg$regression.results$Intercept[1],
 abline(b=reg$confidence.intervals[1,4], a=reg$confidence.intervals[1,2], col='grey',lwd=2)
 abline(b=reg$confidence.intervals[1,5], a=reg$confidence.intervals[1,3], col='grey',lwd=2)
 #text(log(merge$norm.fsc,10), log(merge$pgC.cell,10), labels=merge$Sample.ID)
-legend("topleft", legend=bquote(paste("Qc=",.(round(reg$regression.results$Intercept[1],3)),"(scatter"^{.(round(reg$regression.results$Slope[1],3))},")")), bty='n',cex=2)
+legend("topleft", legend=bquote(paste("Qc=",.(round(10^reg$regression.results$Intercept[1],3)),"(scatter"^{.(round(reg$regression.results$Slope[1],3))},")")), bty='n',cex=2)
 
 dev.off()
+
+fsc <- seq(0.02,20, by=1)
+points(fsc, 10^0.361*fsc^1.126)
