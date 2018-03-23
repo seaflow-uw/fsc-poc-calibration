@@ -9,5 +9,5 @@ The light scattering property of each cell (alive, not fixed), normalized by 1 m
 
 ![alt text](Influx-Qc-scatter.png "BD Influx calibration of forward scatter normalized by 1 micron beads")
 
-We still have a few extra FCM samples that we will be happy to share. Contact us if you are interested (ribalet@uw.edu), 
+We still have a few extra FCM samples that we will be happy to share. Contact us if you are interested (ribalet@uw.edu) 
 
