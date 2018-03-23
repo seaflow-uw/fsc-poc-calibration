@@ -11,3 +11,4 @@ The light scattering property of each cell (alive, not fixed), normalized by 1 m
 
 We still have a few extra FCM samples that we will be happy to share. Contact us if you are interested (ribalet@uw.edu) 
 
+François Ribalet, Angelicque White, Katie Watkins-Brandt, Rhonda Morales, Megan Schatz & Virginia Armbrust contributed to this project.
