@@ -1,4 +1,4 @@
-# fsc-poc-calibration
+# Light scattering / Carbon biomass calibration
 The goal of the experiment was to calibrate light scattering measured by our BD Influx cell sorter and two SeaFlow instruments into cellular carbon content using phytoplankton cultures of various shapes and sizes. 
 
 We used cultures grown under continuous light and monitored the cultures daily to ensure cells were growing expoentially at the start of the experiments (see [notebook.pdf](https://github.com/armbrustlab/fsc-poc-calibration/blob/master/notebook.pdf) for details). We measured cell abundance using BD Influx cell sorter (see [influx-cultures.csv](https://github.com/armbrustlab/fsc-poc-calibration/blob/master/influx-cultures.csv)) and total particulate organic carbon in triplicate using CHN analyzer (see [poc-data.csv](https://github.com/armbrustlab/fsc-poc-calibration/blob/master/poc-data.csv)). Estimates of carbon cell quotas for each culture (see [Qc-cultures.csv](https://github.com/armbrustlab/fsc-poc-calibration/blob/master/Qc-cultures.csv)) were calculated by normalizing POC by cell number. 
