@@ -1,6 +1,6 @@
 # Light scattering to Biomass calibration experiment
 
-## 1. List of cultures (21 strains)
+## 1. List of potential cultures (21 strains)
 ### Axenic strains
 
 #### 0.5 - 1.5 micron diameter
@@ -158,7 +158,7 @@ Dilutions (filtered seawater)
 * D50 for TAPS3367, TAPS1335, PT632
 * D10 for Navicula - D3 and TW3365
 
-##### HARVEST 1
+##### POC HARVEST 1
 
 1) Counting 100-300 µL with Influx using 1 µm beads
 
@@ -174,7 +174,7 @@ Dilutions (filtered seawater)
 
 ### February 24
 
-##### HARVEST 2
+##### POC HARVEST 2
 
 1) Counting 100 µL with Influx using 1 µm beads
 
@@ -257,7 +257,7 @@ Take 30 ml stock into 120 ml of Pro99 medium in flask (flask was washed with 10%
 
 
 ### May 5
-##### HARVEST 3
+##### POC HARVEST 3
 
 1) Influx count: 985 µL media , 5 µL beads + 10 µL cultures
   Counting 100 µL with Influx using 1 µm beads
