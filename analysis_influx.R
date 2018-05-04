@@ -139,8 +139,11 @@ name <- rep(c("EHux","Licmo","Micro","Navicula","PT-632","PT-632","TAPS-1335","T
 summary.table$volume.uL <- volume
 summary.table$abundance_cells.mL <- 1000 * summary.table$n / summary.table$volume.uL # cells / mL
 
-# WARNING: CYANOBAACTERIA cultures were diluted 100X before counting (see 2nd line in notebook Influx-notebook/harvest3.jpg).
+# WARNING: CYANOBACTERIA cultures were diluted 100X before counting (see 2nd line in notebook Influx-notebook/harvest3.jpg), Micromonas pusilla was dilutd 5 times.
 summary.table$abundance_cells.mL[37:60] <- summary.table$abundance_cells.mL[37:60] * 100
+summary.table$abundance_cells.mL[9:12] <- summary.table$abundance_cells.mL[9:12] * 5
+
+
 
 write.csv(summary.table,file=paste("influx-stats.csv", sep=""), row.names=FALSE)
 
@@ -176,9 +179,9 @@ path.to.git.repository <- "~/Documents/DATA/Codes/fsc-poc-calibration"
 setwd(path.to.git.repository)
 poc <- read.csv("poc-data.csv")
 cultures <- read.csv("influx-cultures.csv")
+cultures$Sample.ID <- c(rep("EHUX",2), rep("LICMO",2), rep("MICRO",2),rep("NAV", 2), rep("PT 632",4), rep("TAPS 1135",2), rep("TAPS 3367",2), rep("TW 3365",2), rep("1314",2), rep("7803",2), rep("AS9601",2), rep("MED4",2),rep("NAT12A",2),rep("WH8102",2))
 
-#cultures$Sample.ID <- c(rep("EHUX",2), rep("LICMO",2), rep("MICRO",2),rep("NAV", 2), rep("PT 632",4), rep("TAPS 1135",2), rep("TAPS 3367",2), rep("TW 3365",2), rep("1314",2), rep("7803",2), rep("AS9601",2), rep("MED4",2),rep("NAT12A",2),rep("WH8102",2))
-#write.csv(cultures,file=paste("~/Documents/DATA/Codes/fsc-poc-calibration/influx-cultures.csv", sep=""), row.names=FALSE)
+write.csv(cultures,file=paste("~/Documents/DATA/Codes/fsc-poc-calibration/influx-cultures.csv", sep=""), row.names=FALSE)
 
 poc.sd <- aggregate(poc, by=list(poc$Sample.ID), FUN=sd)
 poc <- aggregate(poc, by=list(poc$Sample.ID), FUN=mean)
