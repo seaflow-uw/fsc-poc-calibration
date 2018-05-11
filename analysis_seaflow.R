@@ -154,7 +154,6 @@ write.csv(merge[,c("Sample.ID","norm.fsc","norm.fsc.sd","norm.chl","norm.chl.sd"
 ############################
 ### 5. LINEAR REGRESSION ###
 ############################
-library(lmodel2)
 library(scales)
 .rainbow.cols <- colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan", "#7FFF7F", "yellow","#FF7F00", "red", "#7F0000"))
 
@@ -169,45 +168,27 @@ merge <- read.csv(paste0(inst,"-Qc-cultures.csv"))
 
 
 merge2 <- subset(merge, Sample.ID !="PT 632")
+merge2 <- merge2[order(merge2$norm.fsc),]
 
 # linear regression type II
-reg <- lmodel2(pgC.cell ~ norm.fsc, data=log(merge2[,c("pgC.cell","norm.fsc")],10))
+reg <- lm(pgC.cell ~ norm.fsc, data=log(merge2[,c("pgC.cell","norm.fsc")],10))
+
+save(reg, file=paste0("lm_",inst))
 
 
 png(paste0(inst,"-Qc-scatter.png"),width=12, height=12, unit='in', res=100)
 
 par(mfrow=c(1,1), pty='s',cex=1.4)
-plot(merge2$norm.fsc,merge2$pgC.cell, log='xy', yaxt='n',cex=2,bg=alpha(.rainbow.cols(nrow(merge2)),0.5), pch=21, ylab=expression(paste("Qc (pgC cell"^{-1},")")), xlab="Normalized scatter (dimensionless)", main=paste0("SeaFlow #",inst))
+plot(merge2$norm.fsc,merge2$pgC.cell, log='xy', yaxt='n',cex=2,bg=alpha(.rainbow.cols(nrow(merge2)),0.5), pch=21,ylab=expression(paste("Qc (pgC cell"^{-1},")")), xlab="Normalized scatter (dimensionless)", main=paste("#",inst))
 with(merge2, arrows(norm.fsc, pgC.cell - merge2$pgC.cell.sd, norm.fsc, pgC.cell + merge2$pgC.cell.sd,  code = 3, length=0))
 with(merge2, arrows(norm.fsc-norm.fsc.sd, pgC.cell, norm.fsc+norm.fsc.sd, pgC.cell,  code = 3, length=0))
 axis(2, at=c(0.1,1,10,100,1000), labels=c(0.1,1,10,100,1000))
 par(new=T)
 plot(log10(merge2$norm.fsc), log10(merge2$pgC.cell), yaxt='n',xaxt='n',xlab=NA, ylab=NA,pch=NA, bty='n')
-abline(b=reg$regression.results$Slope[1], a=reg$regression.results$Intercept[1], col=2,lwd=2)
-abline(b=reg$confidence.intervals[1,4], a=reg$confidence.intervals[1,2], col='grey',lwd=2)
-abline(b=reg$confidence.intervals[1,5], a=reg$confidence.intervals[1,3], col='grey',lwd=2)
-#text(log(merge$norm.fsc,10), log(merge$pgC.cell,10), labels=merge$Sample.ID)
-legend("topleft", legend=bquote(paste("Qc=",.(round(10^reg$regression.results$Intercept[1],3)),"(scatter"^{.(round(reg$regression.results$Slope[1],3))},")")), bty='n',cex=2)
+lines(x=log10(merge2$norm.fsc),predict(reg, newdata=data.frame(norm.fsc=log10(merge2$norm.fsc)),interval='predict')[,"fit"], col='red3',lwd=2 )
+lines(x=log10(merge2$norm.fsc),predict(reg, newdata=data.frame(norm.fsc=log10(merge2$norm.fsc)),interval='predict')[,"lwr"], col='grey',lwd=2 )
+lines(x=log10(merge2$norm.fsc),predict(reg, newdata=data.frame(norm.fsc=log10(merge2$norm.fsc)),interval='predict')[,"upr"], col='grey',lwd=2 )
+legend("topleft", legend=bquote(paste("Qc=",.(round(10^reg$coefficients[1],3)),"(scatter"^{.(round(reg$coefficients[2],3))},")")), bty='n',cex=2)
 legend("bottomright", legend=merge2$Sample.ID, pt.bg=alpha(.rainbow.cols(nrow(merge2)),0.5),pch=21,bty='n')
 
 dev.off()
-
-
-##################
-### 6. SUMMARY ###
-##################
-path.to.git.repository <- "~/Documents/DATA/Codes/fsc-poc-calibration"
-setwd(path.to.git.repository)
-
-merge1 <- read.csv("740-Qc-cultures.csv")
-merge2 <- read.csv("751-Qc-cultures.csv")
-merge1 <- subset(merge1, Sample.ID !="PT 632")
-merge2 <- subset(merge2, Sample.ID !="PT 632")
-  reg <- lmodel2(pgC.cell ~ norm.fsc, data=log(merge1[,c("pgC.cell","norm.fsc")],10))
-df1 <- data.frame(inst=740, expo=reg$regression.results$Slope[1],expo_97.5=reg$confidence.intervals[1,5],expo_2.5=reg$confidence.intervals[1,4],coeff=10^reg$regression.results$Intercept[1], coeff_97.5=10^reg$confidence.intervals[1,3],coeff_2.5=10^reg$confidence.intervals[1,2])
-  reg <- lmodel2(pgC.cell ~ norm.fsc, data=log(merge2[,c("pgC.cell","norm.fsc")],10))
-df2 <- data.frame(inst=751, expo=reg$regression.results$Slope[1],expo_97.5=reg$confidence.intervals[1,5],expo_2.5=reg$confidence.intervals[1,4],coeff=10^reg$regression.results$Intercept[1], coeff_97.5=10^reg$confidence.intervals[1,3],coeff_2.5=10^reg$confidence.intervals[1,2])
-
-df <- rbind(df1,df2)
-
-write.csv(df,file=paste0("seaflow_qc-calibration.csv"), row.names=FALSE)
