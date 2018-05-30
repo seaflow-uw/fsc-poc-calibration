@@ -21,14 +21,14 @@ setwd(path.to.data)
 
 file.list <- dir("740_Small_cyano", pattern = "00-00$", recursive=T, full.names=T); inst <- 740 # small
 file.list <- dir("740_Large_picoeuks", pattern = "00-00$", recursive=T, full.names=T); inst <- 740 # large
-file.list <- dir(".", pattern = "07-00$", recursive=T, full.names=T); inst <- 751 # small
-file.list <- dir(".", pattern = "08-00$", recursive=T, full.names=T); inst <- 751 # large
+# file.list <- dir(".", pattern = "07-00$", recursive=T, full.names=T); inst <- 751 # small
+# file.list <- dir(".", pattern = "08-00$", recursive=T, full.names=T); inst <- 751 # large
 
 # gating
 summary.table <- NULL
 draw.gate <- TRUE
 
-    for (file in file.list[c(9:12)]) {
+    for (file in file.list) {
         print(paste("processing file:",file))
     #file <- file.list[4]
 
@@ -52,13 +52,31 @@ draw.gate <- TRUE
 
 
     #2. cultures
+    # x <- subset(opp, pop==0)
+    # plot.cytogram(x, "chl_small", "pe", main="Pico")
+    # points(beads$chl_small, beads$pe, cex=0.3, col=2, pch=16)
+    # print("gating PICO")
+    # if(draw.gate) poly.pico <- getpoly(quiet=TRUE)
+    # pico <- subset(x,inout(x[,c("chl_small","pe")],poly=poly.pico, bound=TRUE, quiet=TRUE))
+    # opp[row.names(pico),'pop'] <- "picoeuk"
+
+
     x <- subset(opp, pop==0)
-    plot.cytogram(x, "chl_small", "pe", main="Pico")
+    plot.cytogram(x, "fsc_small", "chl_small", main="Pico")
     points(beads$fsc_small, beads$chl_small, cex=0.3, col=2, pch=16)
     print("gating PICO")
     if(draw.gate) poly.pico <- getpoly(quiet=TRUE)
-    pico <- subset(x,inout(x[,c("chl_small","pe")],poly=poly.pico, bound=TRUE, quiet=TRUE))
+    pico <- subset(x,inout(x[,c("fsc_small","chl_small")],poly=poly.pico, bound=TRUE, quiet=TRUE))
     opp[row.names(pico),'pop'] <- "picoeuk"
+
+    # x <- subset(opp, pop==0)
+    # plot.cytogram(x, "fsc_small", "pe", main="Pico")
+    # points(beads$fsc_small, beads$pe, cex=0.3, col=2, pch=16)
+    # print("gating PICO")
+    # if(draw.gate) poly.pico <- getpoly(quiet=TRUE)
+    # pico <- subset(x,inout(x[,c("fsc_small","pe")],poly=poly.pico, bound=TRUE, quiet=TRUE))
+    # opp[row.names(pico),'pop'] <- "picoeuk"
+
 
     ### SAVE PLOT
     png(paste0(file,".png"),width=9, height=12, unit='in', res=100)
@@ -97,7 +115,13 @@ write.csv(summary.table,file=paste0(unique(dirname(file.list)),"/",inst,"_raw_su
 
 
 
-### rbind SMALL & LARGE data
+
+
+#############################
+#### 3. FSC NORMALIZATION ###
+#############################
+path.to.git.repository <- "~/Documents/DATA/Codes/fsc-poc-calibration"
+
 
 for(inst in c(740,751)){
     print(inst)
@@ -106,31 +130,17 @@ for(inst in c(740,751)){
     DF <- NULL
     for(file in list){
         df <- read.csv(file)
-        DF <- rbind(DF, df)
+        beads <- subset(df, i == 'beads')
+        cultures <- subset(df, i == 'picoeuk')
+
+        print(paste("Does rows of beads and cultures match?",unique(cultures$file == beads$file)))
+        cultures$norm.fsc <- round(cultures$fsc/mean(beads$fsc),2)
+        cultures$norm.chl <- round(cultures$fsc/mean(beads$chl),2)
+        DF <- rbind(DF, cultures)
     }
     time <- as.POSIXct(DF$file, format = "%FT%H-%M-%S", tz = "GMT")
     DF[order(time),]
-    write.csv(DF,file=paste0(inst, "-summary.csv", sep=""), row.names=FALSE)
-
-}
-
-#############################
-#### 3. FSC NORMALIZATION ###
-#############################
-path.to.git.repository <- "~/Documents/DATA/Codes/fsc-poc-calibration"
-
-for(inst in c(740,751)){
-
-  summary <- read.csv(file=paste0(inst,"-summary.csv", sep=""))
-  beads <- subset(summary, i == 'beads')
-  cultures <- subset(summary, i == 'picoeuk')
-
-  print(paste("Does rows of beads and cultures match?",unique(cultures$file == beads$file)))
-  cultures$norm.fsc <- round(cultures$fsc/beads$fsc,2)
-  cultures$norm.chl <- round(cultures$fsc/beads$chl,2)
-
-
-  write.csv(cultures,file=paste0(path.to.git.repository,"/",inst,"-cultures.csv", sep=""), row.names=FALSE)
+    write.csv(DF,file=paste0(path.to.git.repository,"/",inst,"-cultures.csv", sep=""), row.names=FALSE)
 
 }
 
@@ -143,10 +153,11 @@ poc <- read.csv("Qc-cultures.csv")
 
 for(inst in c(740,751)){
 
+    #inst <- 740
     cultures <- read.csv(paste0(inst,"-cultures.csv"))
 
-    if(inst == 740){ cultures$Sample.ID <- c(rep("TW 3365",2),"-" ,rep("NAV",2), "-" ,rep("TAPS 1135",2), rep("-",2),rep("TAPS 3367",2), "-" ,rep("PT 632",2), "-" ,rep("MICRO",2),"-" ,
-                                              rep("MED4",2),rep("-",3), rep("AS9601",2),"-" , rep("1314",2),"-" ,rep("MED4",2),"-" ,rep("NAT12A",2),"-" ,rep("WH8102",2), "-" ,rep("7803",2),"-")
+    if(inst == 740){ cultures$Sample.ID <- c(rep("TW 3365",2),rep("NAV",2), rep("TAPS 1135",2), rep("TAPS 3367",2), rep("PT 632",2),rep("MICRO",2),
+                                              rep("MED4",2), rep("AS9601",2), rep("1314",2),rep("MED4",2),rep("NAT12A",2),rep("WH8102",2),rep("7803",2))
               }
     if(inst == 751){ cultures$Sample.ID <- c(rep("TW 3365",2),rep("NAV",2), rep("TAPS 1135",2), rep("TAPS 3367",2),rep("PT 632",2), rep("MICRO",2),
                                               rep("MED4",2), rep("AS9601",2),rep("1314",2),rep("NAT12A",2), rep("WH8102",2), rep("7803",2))
@@ -184,7 +195,7 @@ inst <- 751
 merge <- read.csv(paste0(inst,"-Qc-cultures.csv"))
 
 
-merge2 <- subset(merge, Sample.ID !="PT 632" & Sample.ID !="TAPS 3367" & Sample.ID !="TAPS 1135" & Sample.ID !="NAV")
+merge2 <- subset(merge, Sample.ID !="PT 632" )#& Sample.ID !="TAPS 3367" & Sample.ID !="TAPS 1135" & Sample.ID !="NAV")
 
 merge2 <- merge2[order(merge2$norm.fsc),]
 
