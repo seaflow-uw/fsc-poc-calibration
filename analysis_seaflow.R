@@ -194,13 +194,13 @@ inst <- 751
 
 merge <- read.csv(paste0(inst,"-Qc-cultures.csv"))
 
-
 merge2 <- subset(merge, Sample.ID !="PT 632" )#& Sample.ID !="TAPS 3367" & Sample.ID !="TAPS 1135" & Sample.ID !="NAV")
-
 merge2 <- merge2[order(merge2$norm.fsc),]
 
-# linear regression type II
-reg <- lm(pgC.cell ~ norm.fsc, data=log(merge2[,c("pgC.cell","norm.fsc")],10))
+# linear regression
+reg <- lm(pgC.cell ~ poly(norm.fsc,1,raw=T) , data=log(merge2[,c("pgC.cell","norm.fsc")],10))
+summary(reg)
+
 save(reg, file=paste0("lm_",inst))
 
 

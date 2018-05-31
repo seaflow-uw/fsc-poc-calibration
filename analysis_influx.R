@@ -210,9 +210,8 @@ merge2 <- subset(merge, Sample.ID !="PT 632" & Sample.ID !="EHUX" & Sample.ID !=
 merge2 <- merge2[order(merge2$norm.fsc),]
 
 # linear regression
-reg <- lm(pgC.cell ~ norm.fsc, data=log(merge2[,c("pgC.cell","norm.fsc")],10))
-
-reg <- lm(pgC.cell ~ norm.fsc, data=merge2[,c("pgC.cell","norm.fsc")])
+reg <- lm(pgC.cell ~ poly(norm.fsc,1,raw=T) , data=log(merge2[,c("pgC.cell","norm.fsc")],10))
+summary(reg)
 
 png("Influx-Qc-scatter.png",width=12, height=12, unit='in', res=100)
 
@@ -230,17 +229,3 @@ legend("topleft", legend=bquote(paste("Qc=",.(round(10^reg$coefficients[1],3)),"
 legend("bottomright", legend=merge2$Sample.ID, pt.bg=alpha(.rainbow.cols(nrow(merge2)),0.5),pch=21,bty='n')
 
 dev.off()
-
-
-
-reg <- lm(pgC.cell ~ norm.fsc, data=merge2[,c("pgC.cell","norm.fsc")])
-par(mfrow=c(1,1), pty='s',cex=1.4)
-plot(merge2$norm.fsc,merge2$pgC.cell,  yaxt='n',cex=2,bg=alpha(.rainbow.cols(nrow(merge2)),0.5), pch=21,ylab=expression(paste("Qc (pgC cell"^{-1},")")), xlab="Normalized scatter (dimensionless)", main='Influx')
-with(merge2, arrows(norm.fsc, pgC.cell - merge2$pgC.cell.sd, norm.fsc, pgC.cell + merge2$pgC.cell.sd,  code = 3, length=0))
-with(merge2, arrows(norm.fsc-norm.fsc.sd, pgC.cell, norm.fsc+norm.fsc.sd, pgC.cell,  code = 3, length=0))
-axis(2, at=c(0.1,1,10,100,1000), labels=c(0.1,1,10,100,1000))
-lines(x=merge2$norm.fsc,predict(reg, newdata=data.frame(norm.fsc=merge2$norm.fsc),interval='predict')[,"fit"], col='red3',lwd=2 )
-lines(x=merge2$norm.fsc,predict(reg, newdata=data.frame(norm.fsc=merge2$norm.fsc),interval='predict')[,"lwr"], col='grey',lwd=2 )
-lines(x=merge2$norm.fsc,predict(reg, newdata=data.frame(norm.fsc=merge2$norm.fsc),interval='predict')[,"upr"], col='grey',lwd=2 )
-legend("topleft", legend=bquote(paste("Qc=",.(round(reg$coefficients[2],3)),"(scatter)",.(round(reg$coefficients[1],3)))), bty='n',cex=2)
-legend("bottomright", legend=merge2$Sample.ID, pt.bg=alpha(.rainbow.cols(nrow(merge2)),0.5),pch=21,bty='n')
