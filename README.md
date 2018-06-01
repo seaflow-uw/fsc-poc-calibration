@@ -9,10 +9,7 @@ We used cultures grown under continuous light and monitored the cultures daily t
 - 7803: *Synechcoccus*
 - WH8102: *Synechcoccus*
 - MICRO: *Micromonas pusilla*
-- EHUX: *Emiliania huxleyi* CCMP1742
-- LICMO: *Licmophora paradoxa*
 - NAV: *Navicula transitans*
-- PT632: *Phaeodactylum tricornutum*
 - TAPS1135: *Thalassiosira pseudonana*
 - TAPS3367: *Thalassiosira pseudonana*
 
