@@ -19,10 +19,10 @@ We measured cell abundance using BD Influx cell sorter (see [influx-cultures.csv
 
 The entire analysis used to generate carbon cell quotas is available in [analysis_influx.R](https://github.com/armbrustlab/fsc-poc-calibration/blob/master/analysis_influx.R). Raw CHN data are available in [UW_Exp_PCPN_DATA_FR.xlsx](https://github.com/armbrustlab/fsc-poc-calibration/blob/master/UW_Exp_PCPN_DATA_FR.xlsx); raw FCM files (3.8 GB) can be downloaded using [Dat](https://github.com/datproject/dat). After installation, simply type in the terminal to start download data ```dat clone dat://cdfef982ea4032592e454c1a39b0a3855738b309d7e78ef8b2d0152adc5ffd02```
 
-The light scattering property of each cell (alive, not fixed), normalized by 1 micron beads, was then measured by our BD Influx cell sorter and two SeaFlow instruments (#751 and #740). A linear regression model (type II) was then used to fit normalized forward light scatter to carbon content per cell. The plot below shows the BD influx calibration curve.
+The light scattering property of each cell (alive, not fixed), normalized by 1 micron beads, was then measured by two SeaFlow instruments (#751 and #740) and our BD Influx cell sorter. Red line represents the predicted relationship based on Mie theory. 
 
-![alt text](Influx-Qc-scatter.png "BD Influx calibration of forward scatter normalized by 1 micron beads")
+![alt text](740-Qc-scatter.png "SeaFlow calibration of forward scatter normalized by 1 micron beads")
 
 We still have a few extra FCM samples that we will be happy to share. Contact us if you are interested (ribalet@uw.edu)
 
-***François Ribalet, Angelicque White, Katie Watkins-Brandt, Rhonda Morales, Megan Schatz & Virginia Armbrust contributed to this project.***
+***François Ribalet, Jarred Swalwell, Katie Watkins-Brandt, Rhonda Morales, Megan Schatz & Angelicque White contributed to this project.***
