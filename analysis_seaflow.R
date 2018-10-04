@@ -21,8 +21,8 @@ setwd(path.to.data)
 
 file.list <- dir("740_Small_cyano", pattern = "00-00$", recursive=T, full.names=T); inst <- 740 # small
 file.list <- dir("740_Large_picoeuks", pattern = "00-00$", recursive=T, full.names=T); inst <- 740 # large
-# file.list <- dir(".", pattern = "07-00$", recursive=T, full.names=T); inst <- 751 # small
-# file.list <- dir(".", pattern = "08-00$", recursive=T, full.names=T); inst <- 751 # large
+file.list <- dir(".", pattern = "07-00$", recursive=T, full.names=T); inst <- 751 # small
+file.list <- dir(".", pattern = "08-00$", recursive=T, full.names=T); inst <- 751 # large
 
 # gating
 summary.table <- NULL
@@ -30,14 +30,17 @@ draw.gate <- TRUE
 
     for (file in file.list) {
         print(paste("processing file:",file))
-    #file <- file.list[4]
+    #file <- file.list[11]
 
     ### read EVT and get OPP
-    evt <- readSeaflow(file, transform=T)
+    evt <- readSeaflow(file, transform=F)
     evt <- subset(evt, fsc_small > 2)
     evt <- evt[round(seq(1,nrow(evt), length.out=100000)),]
     ip <- inflection.point(evt)
-    filter.params <- create.filter.params(inst, fsc=ip$fsc, d1=ip$d1, d2=ip$d2)
+    filter.params <- create.filter.params(inst, fsc=ip$fsc, d1=ip$d1, d2=ip$d2, width=10000)
+    # plot.filter.cytogram(evt, filter.params[2,])
+
+    evt <- readSeaflow(file, transform=T)
     opp <- filter.notch(evt, filter.params[2,])$opp
     opp$pop <- 0
 
@@ -50,17 +53,6 @@ draw.gate <- TRUE
     beads <- subset(x,inout(x[,c("fsc_small","pe")],poly=poly.beads, bound=TRUE, quiet=TRUE))
     opp[row.names(beads),'pop'] <- "beads"
 
-
-    #2. cultures
-    # x <- subset(opp, pop==0)
-    # plot.cytogram(x, "chl_small", "pe", main="Pico")
-    # points(beads$chl_small, beads$pe, cex=0.3, col=2, pch=16)
-    # print("gating PICO")
-    # if(draw.gate) poly.pico <- getpoly(quiet=TRUE)
-    # pico <- subset(x,inout(x[,c("chl_small","pe")],poly=poly.pico, bound=TRUE, quiet=TRUE))
-    # opp[row.names(pico),'pop'] <- "picoeuk"
-
-
     x <- subset(opp, pop==0)
     plot.cytogram(x, "fsc_small", "chl_small", main="Pico")
     points(beads$fsc_small, beads$chl_small, cex=0.3, col=2, pch=16)
@@ -68,15 +60,6 @@ draw.gate <- TRUE
     if(draw.gate) poly.pico <- getpoly(quiet=TRUE)
     pico <- subset(x,inout(x[,c("fsc_small","chl_small")],poly=poly.pico, bound=TRUE, quiet=TRUE))
     opp[row.names(pico),'pop'] <- "picoeuk"
-
-    # x <- subset(opp, pop==0)
-    # plot.cytogram(x, "fsc_small", "pe", main="Pico")
-    # points(beads$fsc_small, beads$pe, cex=0.3, col=2, pch=16)
-    # print("gating PICO")
-    # if(draw.gate) poly.pico <- getpoly(quiet=TRUE)
-    # pico <- subset(x,inout(x[,c("fsc_small","pe")],poly=poly.pico, bound=TRUE, quiet=TRUE))
-    # opp[row.names(pico),'pop'] <- "picoeuk"
-
 
     ### SAVE PLOT
     png(paste0(file,".png"),width=9, height=12, unit='in', res=100)
@@ -157,7 +140,7 @@ for(inst in c(740,751)){
     cultures <- read.csv(paste0(inst,"-cultures.csv"))
 
     if(inst == 740){ cultures$Sample.ID <- c(rep("TW 3365",2),rep("NAV",2), rep("TAPS 1135",2), rep("TAPS 3367",2), rep("PT 632",2),rep("MICRO",2),
-                                              rep("MED4",2), rep("AS9601",2), rep("1314",2),rep("MED4",2),rep("NAT12A",2),rep("WH8102",2),rep("7803",2))
+                                              rep("AS9601",2), rep("1314",2),rep("MED4",2),rep("NAT12A",2),rep("WH8102",2),rep("7803",2))
               }
     if(inst == 751){ cultures$Sample.ID <- c(rep("TW 3365",2),rep("NAV",2), rep("TAPS 1135",2), rep("TAPS 3367",2),rep("PT 632",2), rep("MICRO",2),
                                               rep("MED4",2), rep("AS9601",2),rep("1314",2),rep("NAT12A",2), rep("WH8102",2), rep("7803",2))
@@ -193,30 +176,22 @@ inst <- 740
 inst <- 751
 
 merge <- read.csv(paste0(inst,"-Qc-cultures.csv"))
-
 merge2 <- subset(merge, Sample.ID !="PT 632" )#& Sample.ID !="TAPS 3367" & Sample.ID !="TAPS 1135" & Sample.ID !="NAV")
 merge2 <- merge2[order(merge2$norm.fsc),]
 
-# linear regression
-reg <- lm(pgC.cell ~ poly(norm.fsc,1,raw=T) , data=log(merge2[,c("pgC.cell","norm.fsc")],10))
-summary(reg)
+mie <- read.csv("calibrated-mie.csv")
 
-save(reg, file=paste0("lm_",inst))
-
-
-png(paste0(inst,"-Qc-scatter.png"),width=12, height=12, unit='in', res=100)
+#png(paste0(inst,"-Qc-scatter.png"),width=12, height=12, unit='in', res=100)
 
 par(mfrow=c(1,1), pty='s',cex=1.4)
-plot(merge2$norm.fsc,merge2$pgC.cell, log='xy', yaxt='n',cex=2,bg=alpha(.rainbow.cols(nrow(merge2)),0.5), pch=21,ylab=expression(paste("Qc (pgC cell"^{-1},")")), xlab="Normalized scatter (dimensionless)", main=paste("#",inst))
-with(merge2, arrows(norm.fsc, pgC.cell - pgC.cell.sd, norm.fsc, pgC.cell + pgC.cell.sd,  code = 3, length=0))
-with(merge2, arrows(norm.fsc-norm.fsc.sd, pgC.cell, norm.fsc+norm.fsc.sd, pgC.cell,  code = 3, length=0))
-axis(2, at=c(0.1,1,10,100,1000), labels=c(0.1,1,10,100,1000))
-par(new=T)
-plot(log10(merge2$norm.fsc), log10(merge2$pgC.cell), yaxt='n',xaxt='n',xlab=NA, ylab=NA,pch=NA, bty='n')
-lines(x=log10(merge2$norm.fsc),predict(reg, newdata=data.frame(norm.fsc=log10(merge2$norm.fsc)),interval='predict')[,"fit"], col='red3',lwd=2 )
-lines(x=log10(merge2$norm.fsc),predict(reg, newdata=data.frame(norm.fsc=log10(merge2$norm.fsc)),interval='predict')[,"lwr"], col='grey',lwd=2 )
-lines(x=log10(merge2$norm.fsc),predict(reg, newdata=data.frame(norm.fsc=log10(merge2$norm.fsc)),interval='predict')[,"upr"], col='grey',lwd=2 )
-legend("topleft", legend=bquote(paste("Qc=",.(round(10^reg$coefficients[1],3)),"(scatter"^{.(round(reg$coefficients[2],3))},")")), bty='n',cex=2)
-legend("bottomright", legend=merge2$Sample.ID, pt.bg=alpha(.rainbow.cols(nrow(merge2)),0.5),pch=21,bty='n')
+plot(merge2$norm.fsc,merge2$pgC.cell, log='xy', yaxt='n', xaxt='n', pch=NA,xlim=c(0.01,10), ylim=c(0.01,100), ylab=expression(paste("Qc (pgC cell"^{-1},")")), xlab="Normalized scatter (dimensionless)", main=paste("#",inst))
+with(merge2, arrows(norm.fsc, pgC.cell - pgC.cell.sd, norm.fsc, pgC.cell + pgC.cell.sd,  code = 3, length=0, col='grey', lwd=2))
+with(merge2, arrows(norm.fsc-norm.fsc.sd, pgC.cell, norm.fsc+norm.fsc.sd, pgC.cell,  code = 3, length=0,col='grey',lwd=2))
+lines(mie[,paste0("scatter_",inst)], mie$Qc, col='red3',lwd=2)
+points(merge2$norm.fsc,merge2$pgC.cell,bg=alpha(.rainbow.cols(nrow(merge2)),0.5),cex=2, pch=21)
+axis(2, at=c(0.01,0.02,0.05,0.1,0.2,0.5,1,2,5,10,20,50,100,1000), labels=c(0.01, 0.02,0.05,0.1,0.2,0.5,1,2,5,10,20,50,100,1000), las=1)
+axis(1, at=c(0.01,0.02,0.05,0.1,0.2,0.5,1,2,5,10))
+legend("topleft",legend=c(as.vector(merge2$Sample.ID),"Theoritical data"), pch=c(rep(21,nrow(merge2)),NA), lwd=c(rep(NA,nrow(merge2)),2), bty='n',
+          pt.bg=alpha(.rainbow.cols(nrow(merge2)),0.5), col=c(rep(1,nrow(merge2)),'red3'), text.font=c(rep(3,nrow(merge2)),1))
 
 dev.off()
