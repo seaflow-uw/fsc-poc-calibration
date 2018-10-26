@@ -175,6 +175,7 @@ setwd(path.to.git.repository)
 inst <- 740
 inst <- 751
 
+
 merge <- read.csv(paste0(inst,"-Qc-cultures.csv"))
 merge2 <- subset(merge, Sample.ID !="PT 632" )#& Sample.ID !="TAPS 3367" & Sample.ID !="TAPS 1135" & Sample.ID !="NAV")
 merge2 <- merge2[order(merge2$norm.fsc),]
@@ -187,13 +188,13 @@ par(mfrow=c(1,1), pty='s',cex=1.4)
 plot(merge2$norm.fsc,merge2$pgC.cell, log='xy', yaxt='n', xaxt='n', pch=NA,xlim=c(0.002,10), ylim=c(0.005,100), ylab=expression(paste("Qc (pgC cell"^{-1},")")), xlab="Normalized scatter (dimensionless)", main=paste("#",inst))
 with(merge2, arrows(norm.fsc, pgC.cell - pgC.cell.sd, norm.fsc, pgC.cell + pgC.cell.sd,  code = 3, length=0, col='grey', lwd=2))
 with(merge2, arrows(norm.fsc-norm.fsc.sd, pgC.cell, norm.fsc+norm.fsc.sd, pgC.cell,  code = 3, length=0,col='grey',lwd=2))
-lines(mie[,paste0("scatter_",inst,"_50")], mie$Qc, col='red3',lwd=2)
-lines(mie[,paste0("scatter_",inst,"_2.5")], mie$Qc, col='grey',lwd=2)
-lines(mie[,paste0("scatter_",inst,"_97.5")], mie$Qc, col='grey',lwd=2)
+lines(mie$scatter, mie[,paste0("Qc_",inst,"_mid")], col='red3', lwd=2)
+lines(mie$scatter, mie[,paste0("Qc_",inst,"_upr")], col='grey', lwd=2)
+lines(mie$scatter, mie[,paste0("Qc_",inst,"_lwr")], col='grey', lwd=2)
 points(merge2$norm.fsc,merge2$pgC.cell,bg=alpha(.rainbow.cols(nrow(merge2)),0.5),cex=2, pch=21)
 axis(2, at=c(0.005,0.01,0.02,0.05,0.1,0.2,0.5,1,2,5,10,20,50,100,1000), labels=c(0.005,0.01, 0.02,0.05,0.1,0.2,0.5,1,2,5,10,20,50,100,1000), las=1)
 axis(1, at=c(0.002,0.005,0.01,0.02,0.05,0.1,0.2,0.5,1,2,5,10),labels=c(0.002,0.005,0.01,0.02,0.05,0.1,0.2,0.5,1,2,5,10))
-legend("topleft",legend=c(as.vector(merge2$Sample.ID),"Mie-based model"), pch=c(rep(21,nrow(merge2)),NA), lwd=c(rep(NA,nrow(merge2)),2), bty='n',
+legend("topleft",legend=c(as.vector(merge2$Sample.ID),"Mie-based model (index refraction = 1.026 +/- 0.009)"), pch=c(rep(21,nrow(merge2)),NA), lwd=c(rep(NA,nrow(merge2)),2), bty='n',
           pt.bg=alpha(.rainbow.cols(nrow(merge2)),0.5), col=c(rep(1,nrow(merge2)),'red3'), text.font=c(rep(3,nrow(merge2)),1))
 
 dev.off()
