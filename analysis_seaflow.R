@@ -139,11 +139,11 @@ for(inst in c(740,751)){
     #inst <- 740
     cultures <- read.csv(paste0(inst,"-cultures.csv"))
 
-    if(inst == 740){ cultures$Sample.ID <- c(rep("TW 3365",2),rep("NAV",2), rep("TAPS 1135",2), rep("TAPS 3367",2), rep("PT 632",2),rep("MICRO",2),
-                                              rep("AS9601",2), rep("1314",2),rep("MED4",2),rep("NAT12A",2),rep("WH8102",2),rep("7803",2))
+    if(inst == 740){ cultures$Sample.ID <- c(rep("Thalassiosira weissflogii",2),rep("Navicula transitans",2), rep("Thalassiosira pseudonana (1135)",2), rep("Thalassiosira pseudonana (3367)",2), rep("Phaedactylum tricornutum",2),rep("Micromonas pusilla",2),
+                                              rep("Prochlorococcus (AS9601)",2), rep("Prochlorococcus (1314)",2),rep("Prochlorococcus (MED4)",2),rep("Prochlorococcus (NAT12A)",2),rep("Synechococcus (WH8102)",2),rep("Synechococcus (7803)",2))
               }
-    if(inst == 751){ cultures$Sample.ID <- c(rep("TW 3365",2),rep("NAV",2), rep("TAPS 1135",2), rep("TAPS 3367",2),rep("PT 632",2), rep("MICRO",2),
-                                              rep("MED4",2), rep("AS9601",2),rep("1314",2),rep("NAT12A",2), rep("WH8102",2), rep("7803",2))
+    if(inst == 751){ cultures$Sample.ID <- c(rep("Thalassiosira weissflogii",2),rep("Navicula transitans",2), rep("Thalassiosira pseudonana (1135)",2), rep("Thalassiosira pseudonana (3367)",2),rep("Phaedactylum tricornutum",2), rep("Micromonas pusilla",2),
+                                              rep("Prochlorococcus (MED4)",2), rep("Prochlorococcus (AS9601)",2),rep("Prochlorococcus (1314)",2),rep("Prochlorococcus (NAT12A)",2), rep("Synechococcus (WH8102)",2), rep("Synechococcus (7803)",2))
               }
 
     cultures.sd <- aggregate(cultures, by=list(cultures$Sample.ID), FUN=sd)
@@ -176,14 +176,14 @@ inst <- 751
 
 
 merge <- read.csv(paste0(inst,"-Qc-cultures.csv"))
-merge2 <- subset(merge, Sample.ID !="PT 632" )#& Sample.ID !="TAPS 3367" & Sample.ID !="TAPS 1135" & Sample.ID !="NAV")
+merge2 <- subset(merge, Sample.ID !="Phaeodactylum tricornutum") # remove non-spherical cells
 merge2 <- merge2[order(merge2$norm.fsc),]
 
 mie <- read.csv("calibrated-mie.csv")
 
-png(paste0(inst,"-Qc-scatter.png"),width=12, height=12, unit='in', res=100)
+png(paste0(inst,"-Qc-scatter.png"),width=6, height=6, unit='in', res=200)
 
-par(mfrow=c(1,1), pty='s',cex=1.4)
+par(mfrow=c(1,1), pty='s',cex=1.2)
 plot(merge2$norm.fsc,merge2$pgC.cell, log='xy', yaxt='n', xaxt='n', pch=NA,xlim=c(0.002,10), ylim=c(0.005,100), ylab=expression(paste("Qc (pgC cell"^{-1},")")), xlab="Normalized scatter (dimensionless)", main=paste("#",inst))
 with(merge2, arrows(norm.fsc, pgC.cell - pgC.cell.sd, norm.fsc, pgC.cell + pgC.cell.sd,  code = 3, length=0, col='grey', lwd=2))
 with(merge2, arrows(norm.fsc-norm.fsc.sd, pgC.cell, norm.fsc+norm.fsc.sd, pgC.cell,  code = 3, length=0,col='grey',lwd=2))
@@ -193,7 +193,7 @@ lines(mie$scatter, mie[,paste0("Qc_",inst,"_lwr")], col='grey', lwd=2)
 points(merge2$norm.fsc,merge2$pgC.cell,bg=alpha(viridis(nrow(merge2)),0.5),cex=2, pch=21)
 axis(2, at=c(0.005,0.01,0.02,0.05,0.1,0.2,0.5,1,2,5,10,20,50,100,1000), labels=c(0.005,0.01, 0.02,0.05,0.1,0.2,0.5,1,2,5,10,20,50,100,1000), las=1)
 axis(1, at=c(0.002,0.005,0.01,0.02,0.05,0.1,0.2,0.5,1,2,5,10),labels=c(0.002,0.005,0.01,0.02,0.05,0.1,0.2,0.5,1,2,5,10))
-legend("topleft",legend=c(as.vector(merge2$Sample.ID),"Mie-based model (index refraction = 1.031 +/- 0.014)"), pch=c(rep(21,nrow(merge2)),NA), lwd=c(rep(NA,nrow(merge2)),2), bty='n',
+legend("topleft",legend=c(as.vector(merge2$Sample.ID),"Mie-based model (n = 1.031 +/- 0.014)"), cex=0.5,pch=c(rep(21,nrow(merge2)),NA), lwd=c(rep(NA,nrow(merge2)),2), bty='n',
           pt.bg=alpha(viridis(nrow(merge2)),0.5), col=c(rep(1,nrow(merge2)),'red3'), text.font=c(rep(3,nrow(merge2)),1))
 
 dev.off()
