@@ -139,9 +139,11 @@ name <- rep(c("EHux","Licmo","Micro","Navicula","PT-632","PT-632","TAPS-1335","T
 summary.table$volume.uL <- volume
 summary.table$abundance_cells.mL <- 1000 * summary.table$n / summary.table$volume.uL # cells / mL
 
-# WARNING: CYANOBACTERIA cultures were diluted 100X before counting (see 2nd line in notebook Influx-notebook/harvest3.jpg), Micromonas pusilla was dilutd 5 times.
-summary.table$abundance_cells.mL[37:60] <- summary.table$abundance_cells.mL[37:60] * 100
-summary.table$abundance_cells.mL[9:12] <- summary.table$abundance_cells.mL[9:12] * 5
+# WARNING: Small size phytoplankton cultures were dilutd before counting (see Influx-notebook/harvest1.jpg, harvest2.jpg Influx-notebook/harvest3.jpg).
+
+summary.table$abundance_cells.mL[c(37:40,45:56)] <- summary.table$abundance_cells.mL[c(37:40,45:56)] * 50 # Prochlorococcus cultures were diluted 50X
+summary.table$abundance_cells.mL[c(41:44,57:60)] <- summary.table$abundance_cells.mL[c(41:44,57:60)] * 100 # Synechococcus cultures were diluted 100X
+summary.table$abundance_cells.mL[9:12] <- summary.table$abundance_cells.mL[9:12] * 5 #Micromonas pusilla was dilutd 5 times
 
 
 beads <- subset(summary.table, i == 'beads')
@@ -151,7 +153,7 @@ cultures$norm.fsc <- round(cultures$fsc/beads$fsc,2)
 cultures$norm.chl <- round(cultures$fsc/beads$chl,2)
 
 
-write.csv(cultures[,c("file","n","volume.uL","abundance_cells.mL","norm.fsc", "norm.chl")],file=paste("influx-cultures.csv", sep=""), row.names=FALSE)
+write.csv(cultures[,c("file","n","volume.uL","abundance_cells.mL","norm.fsc", "norm.chl")],file=paste(path.to.git.repository,"/influx-cultures.csv", sep=""), row.names=FALSE)
 
 
 ###########################################
@@ -161,7 +163,9 @@ path.to.git.repository <- "~/Documents/DATA/Codes/fsc-poc-calibration"
 setwd(path.to.git.repository)
 poc <- read.csv("poc-data.csv")
 cultures <- read.csv("influx-cultures.csv")
-cultures$Sample.ID <- c(rep("EHUX",2), rep("LICMO",2), rep("MICRO",2),rep("NAV", 2), rep("PT 632",4), rep("TAPS 1135",2), rep("TAPS 3367",2), rep("TW 3365",2), rep("1314",2), rep("7803",2), rep("AS9601",2), rep("MED4",2),rep("NAT12A",2),rep("WH8102",2))
+cultures$Sample.ID <- c(rep("EHUX",2), rep("LICMO",2), rep("Micromonas pusilla",2),rep("Navicula transitans", 2), rep("Phaeodactylum tricornutum",4), rep("Thalassiosira pseudonana (1135)",2),
+                        rep("Thalassiosira pseudonana (3367)",2), rep("TW 3365",2), rep("Prochlorococcus (1314)",2), rep("Synechococcus (7803)",2),
+                        rep("Prochlorococcus (AS9601)",2), rep("Prochlorococcus (MED4)",2),rep("Prochlorococcus (NAT12A)",2),rep("Synechococcus (WH8102)",2))
 
 poc.sd <- aggregate(poc, by=list(poc$Sample.ID), FUN=sd)
 poc.mean <- aggregate(poc, by=list(poc$Sample.ID), FUN=mean)
@@ -202,11 +206,11 @@ library(scales)
 path.to.git.repository <- "~/Documents/DATA/Codes/fsc-poc-calibration"
 setwd(path.to.git.repository)
 merge <- read.csv("Influx-Qc-cultures.csv")
+mie <- read.csv("INFLUXcalibrated-mie.csv")
 
 ### WARNING !!! ###
-# 1. For regression purpose, we excluded elongated cell type, specifically PT632 & LICMO since forward scatter is sensitive to the cell width (not cell length), underestimating the true cell size
-# 2. We also excluded data from EHUX since we collected only one filter, giving us little confidence in POc measurement.
-merge2 <- subset(merge, Sample.ID !="PT 632" & Sample.ID !="EHUX" & Sample.ID !="LICMO")
+# 1. For regression purpose, we excluded elongated cell type, specifically Phaedactylum tricornutum since forward scatter is sensitive to the cell width (not cell length), underestimating the true cell size
+merge2 <- subset(merge, Sample.ID !="Phaeodactylum tricornutum")
 merge2 <- merge2[order(merge2$norm.fsc),]
 
 # linear regression
