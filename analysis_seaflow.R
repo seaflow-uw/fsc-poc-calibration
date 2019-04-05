@@ -197,3 +197,11 @@ legend("topleft",legend=c(as.vector(merge2$Sample.ID),"Mie-based model (n = 1.38
 }
 
 dev.off()
+
+
+
+### correlation
+id <- findInterval(merge2$norm.fsc, mie$scatter)
+df <- data.frame(observed=merge2$pgC.cell, predicted=mie[id,paste0("Qc_",inst,"_mid")])
+reg <- lm(observed ~ predicted, data=df)
+summary(reg)
