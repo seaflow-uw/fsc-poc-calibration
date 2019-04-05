@@ -1,27 +1,13 @@
 # Calibration light scattering - carbon per cell
-The goal of the experiment was to calibrate light scattering measured by our BD Influx cell sorter and two SeaFlow instruments into cellular carbon content using phytoplankton cultures of various shapes and sizes.
+A set of independent experiments was conducted to compare independent measurements of carbon quotas with those estimated from Mie-predicted cell diameter. Carbon per cell was determined for 6 axenic cyanobacteria cultures (<i>Prochlorocococcus</i> MED4, MIT9312, AS9601 and NAT12A, <i>Synechococcus</i> 7803 and WH8012 ) and 4 different eukaryotic phytoplankton cultures (<i>Micromonas pusilla, Navicula transitans, Thalassosira pseudonana</i> 3367 and 1135) by using a CHN analyzer to measure total particulate organic carbon for samples collected on pre-combusted 0.3-µm GF-75 and 0.7-µm GF/F filters. Carbon quotas were obtained by normalizing the concentrations of particulate organic carbon to cell abundance measured by a BD Influx cell sorter. Mie-predicted cell diameter using light scatter measurements from SeaFlow was converted to carbon quotas assuming spherical particle and a volume to carbon ratio of 220 fg µm-3, commonly applied to small size phytoplankton (Li et al. 1992, Ishizaka et al. 1994, Velduis et al. 1997, Veldhuis & Kraay 2004). For both of our SeaFlow isntrument (serial number 740 and 751), we found that carbon quotas were in good agreement with our light scatter-based estimates using an index of refraction of 1.38. Note that our predictions of carbon quotas for the three smallest Prochlorococcus cultures were XX% lower than those measured by CHN analyzer, which suggest that not all <i>Prochlorococcus</i> cells were captured by 0.3 µm GF75 filters.
+![alt text](Qc-scatter.png "SeaFlow calibration of forward scatter normalized by 1 micron beads")
 
-We used cultures grown under continuous light and monitored the cultures daily to ensure cells were growing exponentially at the start of the experiment. Below is the list of the species used:
-- MED4: *Prochlorococcus* HLI
-- 1314: *Prochlorococcus* HLII
-- AS9601: *Prochlorococcus* HLII
-- NAT12A: *Prochlorococcus* LLI
-- 7803: *Synechcoccus*
-- WH8102: *Synechcoccus*
-- MICRO: *Micromonas pusilla*
-- NAV: *Navicula transitans*
-- TAPS1135: *Thalassiosira pseudonana*
-- TAPS3367: *Thalassiosira pseudonana*
 
-See [notebook.pdf](https://github.com/armbrustlab/fsc-poc-calibration/blob/master/notebook.pdf) for more details.
+Cultures were grown under continuous light and monitored the cultures daily to ensure cells were growing exponentially at the start of the experiment. See [notebook.pdf](https://github.com/armbrustlab/fsc-poc-calibration/blob/master/notebook.pdf) for more details.
 
 We measured cell abundance using BD Influx cell sorter (see [influx-cultures.csv](https://github.com/armbrustlab/fsc-poc-calibration/blob/master/influx-cultures.csv)) and total particulate organic carbon in triplicate using CHN analyzer (see [poc-data.csv](https://github.com/armbrustlab/fsc-poc-calibration/blob/master/poc-data.csv)). Estimates of carbon cell quotas for each culture were calculated by normalizing POC by cell number, data file is available here: [Qc-cultures.csv](https://github.com/armbrustlab/fsc-poc-calibration/blob/master/Qc-cultures.csv).
 
 The entire analysis used to generate carbon cell quotas is available in [analysis_influx.R](https://github.com/armbrustlab/fsc-poc-calibration/blob/master/analysis_influx.R). Raw CHN data are available in [UW_Exp_PCPN_DATA_FR.xlsx](https://github.com/armbrustlab/fsc-poc-calibration/blob/master/UW_Exp_PCPN_DATA_FR.xlsx); raw FCM files (3.8 GB) can be downloaded using [Dat](https://github.com/datproject/dat). After installation, simply type in the terminal to start download data ```dat clone dat://cdfef982ea4032592e454c1a39b0a3855738b309d7e78ef8b2d0152adc5ffd02```
-
-The light scattering property of each cell (alive, not fixed), normalized by 1 micron beads, was then measured by two SeaFlow instruments (#751 and #740) and our BD Influx cell sorter. Red line represents the predicted relationship based on Mie theory.
-
-![alt text](Qc-scatter.png "SeaFlow calibration of forward scatter normalized by 1 micron beads")
 
 We still have a few extra FCM samples that we will be happy to share. Contact us if you are interested (ribalet@uw.edu)
 
