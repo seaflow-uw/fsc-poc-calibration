@@ -140,10 +140,10 @@ for(inst in c(740,751)){
     cultures <- read.csv(paste0(inst,"-cultures.csv"))
 
     if(inst == 740){ cultures$Sample.ID <- c(rep("Thalassiosira weissflogii",2),rep("Navicula transitans",2), rep("Thalassiosira pseudonana (1135)",2), rep("Thalassiosira pseudonana (3367)",2), rep("Phaedactylum tricornutum",2),rep("Micromonas pusilla",2),
-                                              rep("Prochlorococcus (AS9601)",2), rep("Prochlorococcus (1314)",2),rep("Prochlorococcus (MED4)",2),rep("Prochlorococcus (NAT12A)",2),rep("Synechococcus (WH8102)",2),rep("Synechococcus (7803)",2))
+                                              rep("Prochlorococcus (AS9601)",2), rep("Prochlorococcus (1314)",2),rep("Prochlorococcus (MED4)",2),rep("Prochlorococcus (NATL12A)",2),rep("Synechococcus (WH8102)",2),rep("Synechococcus (WH7803)",2))
               }
     if(inst == 751){ cultures$Sample.ID <- c(rep("Thalassiosira weissflogii",2),rep("Navicula transitans",2), rep("Thalassiosira pseudonana (1135)",2), rep("Thalassiosira pseudonana (3367)",2),rep("Phaedactylum tricornutum",2), rep("Micromonas pusilla",2),
-                                              rep("Prochlorococcus (MED4)",2), rep("Prochlorococcus (AS9601)",2),rep("Prochlorococcus (1314)",2),rep("Prochlorococcus (NAT12A)",2), rep("Synechococcus (WH8102)",2), rep("Synechococcus (7803)",2))
+                                              rep("Prochlorococcus (MED4)",2), rep("Prochlorococcus (AS9601)",2),rep("Prochlorococcus (1314)",2),rep("Prochlorococcus (NATL12A)",2), rep("Synechococcus (WH8102)",2), rep("Synechococcus (WH7803)",2))
               }
 
     cultures.sd <- aggregate(cultures, by=list(cultures$Sample.ID), FUN=sd)
