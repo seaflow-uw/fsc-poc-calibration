@@ -169,6 +169,7 @@ library(scales)
 library(viridis)
 path.to.git.repository <- "~/Documents/DATA/Codes/fsc-poc-calibration"
 setwd(path.to.git.repository)
+mie <- read.csv("calibrated-mie.csv")
 
 png("Qc-scatter.png",width=12, height=6, unit='in', res=200)
 par(mfrow=c(1,2), pty='s',cex=1.2)
@@ -179,7 +180,6 @@ merge <- read.csv(paste0(inst,"-Qc-cultures.csv"))
 merge2 <- subset(merge, Sample.ID !="Phaeodactylum tricornutum") # remove non-spherical cells
 merge2 <- merge2[order(merge2$norm.fsc),]
 
-mie <- read.csv("calibrated-mie.csv")
 
 
 plot(merge2$norm.fsc,merge2$pgC.cell, log='xy', yaxt='n', xaxt='n', pch=NA,xlim=c(0.002,10), ylim=c(0.005,100), ylab=expression(paste("Qc (pgC cell"^{-1},")")), xlab="Normalized scatter (dimensionless)", main=paste(inst))
