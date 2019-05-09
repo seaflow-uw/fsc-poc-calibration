@@ -210,26 +210,27 @@ mie <- read.csv("INFLUXcalibrated-mie.csv")
 
 ### WARNING !!! ###
 # 1. For regression purpose, we excluded elongated cell type, specifically Phaedactylum tricornutum since forward scatter is sensitive to the cell width (not cell length), underestimating the true cell size
-merge2 <- subset(merge, Sample.ID !="Phaeodactylum tricornutum")
+merge2 <- merge#subset(merge, Sample.ID !="Phaeodactylum tricornutum")
 merge2 <- merge2[order(merge2$norm.fsc),]
 
 # linear regression
 reg <- lm(pgC.cell ~ poly(norm.fsc,1,raw=T) , data=log(merge2[,c("pgC.cell","norm.fsc")],10))
 summary(reg)
 
-png("Influx-Qc-scatter.png",width=12, height=12, unit='in', res=100)
+png("Influx-Qc-scatter.png",width=12, height=12, unit='in', res=400)
 
+par(cex=1.2, pty='s')
 plot(merge2$norm.fsc,merge2$pgC.cell, log='xy', yaxt='n', xaxt='n', pch=NA,xlim=c(0.002,20), ylim=c(0.005,100), ylab=expression(paste("Qc (pgC cell"^{-1},")")), xlab="Normalized scatter (dimensionless)")
 lines(mie$scatter, mie[,paste0('Qc_mid')], col='red3', lwd=2)
 lines(mie$scatter, mie[,paste0('Qc_upr')], col='grey', lwd=2)
 lines(mie$scatter, mie[,paste0('Qc_lwr')], col='grey', lwd=2)
 with(merge2, arrows(norm.fsc, pgC.cell - pgC.cell.sd, norm.fsc, pgC.cell + pgC.cell.sd,  code = 3, length=0, col='grey', lwd=2))
 with(merge2, arrows(norm.fsc-norm.fsc.sd, pgC.cell, norm.fsc+norm.fsc.sd, pgC.cell,  code = 3, length=0,col='grey',lwd=2))
-points(merge2$norm.fsc,merge2$pgC.cell,bg=alpha(.rainbow.cols(nrow(merge2)),0.5),cex=2, pch=21)
+points(merge2$norm.fsc,merge2$pgC.cell,bg=alpha(viridis(nrow(merge2)),0.5),cex=2, pch=21)
 axis(2, at=c(0.005,0.01,0.02,0.05,0.1,0.2,0.5,1,2,5,10,20,50,100,1000), labels=c(0.005,0.01, 0.02,0.05,0.1,0.2,0.5,1,2,5,10,20,50,100,1000), las=1)
 axis(1, at=c(0.002,0.005,0.01,0.02,0.05,0.1,0.2,0.5,1,2,5,10),labels=c(0.002,0.005,0.01,0.02,0.05,0.1,0.2,0.5,1,2,5,10))
 legend("topleft",legend=c(as.vector(merge2$Sample.ID),"Mie-based model (n = 1.38 +/- 0.3)"), pch=c(rep(21,nrow(merge2)),NA, NA), lwd=c(rep(NA,nrow(merge2)),2, NA), bty='n',
-          pt.bg=alpha(.rainbow.cols(nrow(merge2)),0.5), col=c(rep(1,nrow(merge2)),'red3'), text.font=c(rep(3,nrow(merge2)),1))
+          pt.bg=alpha(viridis(nrow(merge2)),0.5), col=c(rep(1,nrow(merge2)),'red3'), text.font=c(rep(3,nrow(merge2)),1))
 
 
 dev.off()
