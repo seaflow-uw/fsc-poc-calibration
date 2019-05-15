@@ -206,7 +206,7 @@ library(scales)
 path.to.git.repository <- "~/Documents/DATA/Codes/fsc-poc-calibration"
 setwd(path.to.git.repository)
 merge <- read.csv("Influx-Qc-cultures.csv")
-mie <- read.csv("INFLUXcalibrated-mie.csv")
+mie <- read.csv("calibrated-mieINFLUX.csv")
 
 ### WARNING !!! ###
 # 1. For regression purpose, we excluded elongated cell type, specifically Phaedactylum tricornutum since forward scatter is sensitive to the cell width (not cell length), underestimating the true cell size
