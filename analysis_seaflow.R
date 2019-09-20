@@ -171,7 +171,7 @@ path.to.git.repository <- "~/Documents/DATA/Codes/fsc-poc-calibration"
 setwd(path.to.git.repository)
 mie <- read.csv("calibrated-mie.csv")
 
-png("Qc-scatter.png",width=12, height=6, unit='in', res=200)
+pdf("Qc-scatter.pdf",width=12, height=6)
 par(mfrow=c(1,2), pty='s',cex=1.2)
 
 for(inst in c(740, 751)){

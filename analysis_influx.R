@@ -217,7 +217,7 @@ merge2 <- merge2[order(merge2$norm.fsc),]
 reg <- lm(pgC.cell ~ poly(norm.fsc,1,raw=T) , data=log(merge2[,c("pgC.cell","norm.fsc")],10))
 summary(reg)
 
-png("Influx-Qc-scatter.png",width=12, height=12, unit='in', res=400)
+pdf("Influx-Qc-scatter.pdf",width=12, height=12)
 
 par(cex=1.2, pty='s')
 plot(merge2$norm.fsc,merge2$pgC.cell, log='xy', yaxt='n', xaxt='n', pch=NA,xlim=c(0.002,20), ylim=c(0.005,100), ylab=expression(paste("Qc (pgC cell"^{-1},")")), xlab="Normalized scatter (dimensionless)")
