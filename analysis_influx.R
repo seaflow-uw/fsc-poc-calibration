@@ -38,7 +38,7 @@ dat://cdfef982ea4032592e454c1a39b0a3855738b309d7e78ef8b2d0152adc5ffd02
 ###########################
 ## 2. BATCH FILES INFLUX ##
 ###########################
-path.to.data <- "~/Documents/DATA/Codes/fsc-poc-calibration/fsc-poc-calibration-data"
+path.to.data <- "~/Documents/Codes/fsc-poc-calibration/fsc-poc-calibration-data"
 setwd(path.to.data)
 
 file.list <- dir(".", pattern = ".fcs$", recursive=T, full.names=T)
@@ -126,8 +126,8 @@ write.csv(summary.table,file=paste("influx_raw_summary.csv", sep=""), row.names=
 #############################
 #### 3. FSC NORMALIZATION ###
 #############################
-path.to.git.repository <- "~/Documents/DATA/Codes/fsc-poc-calibration"
-path.to.data <- "~/Documents/DATA/Codes/fsc-poc-calibration/fsc-poc-calibration-data"
+path.to.git.repository <- "~/Documents/Codes/fsc-poc-calibration"
+path.to.data <- "~/Documents/Codes/fsc-poc-calibration/fsc-poc-calibration-data"
 setwd(path.to.data)
 summary.table <- read.csv(file=paste("influx_raw_summary.csv", sep=""))
 
@@ -159,7 +159,7 @@ write.csv(cultures[,c("file","n","volume.uL","abundance_cells.mL","norm.fsc", "n
 ###########################################
 ### 4. MERGE FCM data with POC/PON data ###
 ###########################################
-path.to.git.repository <- "~/Documents/DATA/Codes/fsc-poc-calibration"
+path.to.git.repository <- "~/Documents/Codes/fsc-poc-calibration"
 setwd(path.to.git.repository)
 poc <- read.csv("poc-data.csv")
 cultures <- read.csv("influx-cultures.csv")
@@ -197,13 +197,15 @@ write.csv(merge[,c("Sample.ID","norm.fsc","norm.fsc.sd","norm.chl","norm.chl.sd"
 write.csv(merge[,c("Sample.ID","abundance_cells.mL","abundance_cells.mL.sd","pgC.cell","pgN.cell","pgC.cell.sd","pgN.cell.sd")],file="Qc-cultures.csv", row.names=FALSE)
 
 
+
+
 ############################
 ### 5. LINEAR REGRESSION ###
 ############################
 library(scales)
 .rainbow.cols <- colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan", "#7FFF7F", "yellow","#FF7F00", "red", "#7F0000"))
 
-path.to.git.repository <- "~/Documents/DATA/Codes/fsc-poc-calibration"
+path.to.git.repository <- "~/Documents/Codes/fsc-poc-calibration"
 setwd(path.to.git.repository)
 merge <- read.csv("Influx-Qc-cultures.csv")
 mie <- read.csv("calibrated-mieINFLUX.csv")

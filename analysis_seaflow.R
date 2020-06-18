@@ -16,7 +16,7 @@ dat://cdfef982ea4032592e454c1a39b0a3855738b309d7e78ef8b2d0152adc5ffd02
 ## 2. BATCH FILES SEAFLOW ##
 ############################
 library(popcycle)
-path.to.data <- "~/Documents/DATA/Codes/fsc-poc-calibration/fsc-poc-calibration-data"
+path.to.data <- "~/Documents/Codes/fsc-poc-calibration/fsc-poc-calibration-data"
 setwd(path.to.data)
 
 file.list <- dir("740_Small_cyano", pattern = "00-00$", recursive=T, full.names=T); inst <- 740 # small
@@ -103,7 +103,7 @@ write.csv(summary.table,file=paste0(unique(dirname(file.list)),"/",inst,"_raw_su
 #############################
 #### 3. FSC NORMALIZATION ###
 #############################
-path.to.git.repository <- "~/Documents/DATA/Codes/fsc-poc-calibration"
+path.to.git.repository <- "~/Documents/Codes/fsc-poc-calibration"
 
 
 for(inst in c(740,751)){
@@ -130,7 +130,7 @@ for(inst in c(740,751)){
 ###########################################
 ### 4. MERGE FCM data with POC/PON data ###
 ###########################################
-path.to.git.repository <- "~/Documents/DATA/Codes/fsc-poc-calibration"
+path.to.git.repository <- "~/Documents/Codes/fsc-poc-calibration"
 setwd(path.to.git.repository)
 poc <- read.csv("Qc-cultures.csv")
 
@@ -167,7 +167,7 @@ for(inst in c(740,751)){
 ############################
 library(scales)
 library(viridis)
-path.to.git.repository <- "~/Documents/DATA/Codes/fsc-poc-calibration"
+path.to.git.repository <- "~/Documents/Codes/fsc-poc-calibration"
 setwd(path.to.git.repository)
 mie <- read.csv("calibrated-mie.csv")
 
@@ -205,3 +205,20 @@ id <- findInterval(merge2$norm.fsc, mie$scatter)
 df <- data.frame(observed=merge2$pgC.cell, predicted=mie[id,paste0("Qc_",inst,"_mid")])
 reg <- lm(observed ~ predicted, data=df)
 summary(reg)
+
+pdf("Qc-scatter.pdf",width=6, height=6)
+
+plot(merge2$norm.fsc,merge2$pgC.cell, log='xy', yaxt='n', xaxt='n', pch=NA,xlim=c(0.002,10), ylim=c(0.005,100), ylab=expression(paste("Qc (pgC cell"^{-1},")")), xlab="Normalized scatter (dimensionless)")
+with(merge2, arrows(norm.fsc, pgC.cell - pgC.cell.sd, norm.fsc, pgC.cell + pgC.cell.sd,  code = 3, length=0, col='grey', lwd=2))
+with(merge2, arrows(norm.fsc-norm.fsc.sd, pgC.cell, norm.fsc+norm.fsc.sd, pgC.cell,  code = 3, length=0,col='grey',lwd=2))
+points(merge2$norm.fsc,merge2$pgC.cell,bg=alpha(viridis(nrow(merge2)),0.5),cex=2, pch=21)
+axis(2, at=c(0.005,0.01,0.02,0.05,0.1,0.2,0.5,1,2,5,10,20,50,100,1000), labels=c(0.005,0.01, 0.02,0.05,0.1,0.2,0.5,1,2,5,10,20,50,100,1000), las=1)
+axis(1, at=c(0.002,0.005,0.01,0.02,0.05,0.1,0.2,0.5,1,2,5,10),labels=c(0.002,0.005,0.01,0.02,0.05,0.1,0.2,0.5,1,2,5,10))
+legend("topleft",legend=c(as.vector(merge2$Sample.ID)), cex=0.5,pch=c(rep(21,nrow(merge2))), bty='n',
+       pt.bg=alpha(viridis(nrow(merge2)),0.5), col=c(rep(1,nrow(merge2))), text.font=c(rep(3,nrow(merge2)),1))
+
+abline(0.5239, 1.0462, lwd=2, col='red3')
+
+dev.off()
+
+lm(pgC.cell ~ norm.fsc, data=log10(merge2[,c("pgC.cell","norm.fsc")]))
