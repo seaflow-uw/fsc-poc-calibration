@@ -112,7 +112,7 @@ summary.table <- rbind(summary.table, table)
 
 }
 
-write.csv(summary.table,file=paste("influx_raw_summary.csv", sep=""), row.names=FALSE)
+write.csv(summary.table,file=paste("influx_stat.csv", sep=""), row.names=FALSE)
 
 
 
@@ -129,7 +129,7 @@ write.csv(summary.table,file=paste("influx_raw_summary.csv", sep=""), row.names=
 path.to.git.repository <- "~/Documents/Codes/fsc-poc-calibration"
 path.to.data <- "~/Documents/Codes/fsc-poc-calibration/fsc-poc-calibration-data"
 setwd(path.to.data)
-summary.table <- read.csv(file=paste("influx_raw_summary.csv", sep=""))
+summary.table <- read.csv(file=paste("influx_stat.csv", sep=""))
 
 volume <- c(rep(500.3,2), rep(500.5,2),rep(496,2),rep(500.12,2),rep(300.3,2),rep(300.22,2),rep(300.45,2), rep(300,2), rep(150.46,2), rep(200.18,2),rep(150.2,2), rep(200.1,2),rep(300.28,2),rep(302,2),rep(200.57,2),rep(199.97,2),rep(300.25,2),
             rep(300.24,2),rep(99.9,2),rep(100.13,2),rep(99.87,2),rep(99.84,2),rep(100.05,2),rep(99.98,2),rep(100.2,2),rep(100.2,2),rep(99.93,2),rep(99.9,2),rep(100.07,2),rep(100.07,2))
@@ -195,44 +195,3 @@ write.csv(merge[,c("Sample.ID","norm.fsc","norm.fsc.sd","norm.chl","norm.chl.sd"
 
 #### CELL QUOTAS reference
 write.csv(merge[,c("Sample.ID","abundance_cells.mL","abundance_cells.mL.sd","pgC.cell","pgN.cell","pgC.cell.sd","pgN.cell.sd")],file="Qc-cultures.csv", row.names=FALSE)
-
-
-
-
-############################
-### 5. LINEAR REGRESSION ###
-############################
-library(scales)
-.rainbow.cols <- colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan", "#7FFF7F", "yellow","#FF7F00", "red", "#7F0000"))
-
-path.to.git.repository <- "~/Documents/Codes/fsc-poc-calibration"
-setwd(path.to.git.repository)
-merge <- read.csv("Influx-Qc-cultures.csv")
-mie <- read.csv("calibrated-mieINFLUX.csv")
-
-### WARNING !!! ###
-# 1. For regression purpose, we excluded elongated cell type, specifically Phaedactylum tricornutum since forward scatter is sensitive to the cell width (not cell length), underestimating the true cell size
-merge2 <- merge#subset(merge, Sample.ID !="Phaeodactylum tricornutum")
-merge2 <- merge2[order(merge2$norm.fsc),]
-
-# linear regression
-reg <- lm(pgC.cell ~ poly(norm.fsc,1,raw=T) , data=log(merge2[,c("pgC.cell","norm.fsc")],10))
-summary(reg)
-
-pdf("Influx-Qc-scatter.pdf",width=12, height=12)
-
-par(cex=1.2, pty='s')
-plot(merge2$norm.fsc,merge2$pgC.cell, log='xy', yaxt='n', xaxt='n', pch=NA,xlim=c(0.002,20), ylim=c(0.005,100), ylab=expression(paste("Qc (pgC cell"^{-1},")")), xlab="Normalized scatter (dimensionless)")
-lines(mie$scatter, mie[,paste0('Qc_mid')], col='red3', lwd=2)
-lines(mie$scatter, mie[,paste0('Qc_upr')], col='grey', lwd=2)
-lines(mie$scatter, mie[,paste0('Qc_lwr')], col='grey', lwd=2)
-with(merge2, arrows(norm.fsc, pgC.cell - pgC.cell.sd, norm.fsc, pgC.cell + pgC.cell.sd,  code = 3, length=0, col='grey', lwd=2))
-with(merge2, arrows(norm.fsc-norm.fsc.sd, pgC.cell, norm.fsc+norm.fsc.sd, pgC.cell,  code = 3, length=0,col='grey',lwd=2))
-points(merge2$norm.fsc,merge2$pgC.cell,bg=alpha(viridis(nrow(merge2)),0.5),cex=2, pch=21)
-axis(2, at=c(0.005,0.01,0.02,0.05,0.1,0.2,0.5,1,2,5,10,20,50,100,1000), labels=c(0.005,0.01, 0.02,0.05,0.1,0.2,0.5,1,2,5,10,20,50,100,1000), las=1)
-axis(1, at=c(0.002,0.005,0.01,0.02,0.05,0.1,0.2,0.5,1,2,5,10),labels=c(0.002,0.005,0.01,0.02,0.05,0.1,0.2,0.5,1,2,5,10))
-legend("topleft",legend=c(as.vector(merge2$Sample.ID),"Mie-based model (n = 1.38 +/- 0.3)"), pch=c(rep(21,nrow(merge2)),NA, NA), lwd=c(rep(NA,nrow(merge2)),2, NA), bty='n',
-          pt.bg=alpha(viridis(nrow(merge2)),0.5), col=c(rep(1,nrow(merge2)),'red3'), text.font=c(rep(3,nrow(merge2)),1))
-
-
-dev.off()
