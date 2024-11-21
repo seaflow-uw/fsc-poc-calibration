@@ -139,7 +139,7 @@ name <- rep(c("EHux","Licmo","Micro","Navicula","PT-632","PT-632","TAPS-1335","T
 summary.table$volume.uL <- volume
 summary.table$abundance_cells.mL <- 1000 * summary.table$n / summary.table$volume.uL # cells / mL
 
-# WARNING: Small size phytoplankton cultures were dilutd before counting (see Influx-notebook/harvest1.jpg, harvest2.jpg Influx-notebook/harvest3.jpg).
+# WARNING: Small size phytoplankton cultures were diluted before counting (see Influx-notebook/harvest1.jpg, harvest2.jpg Influx-notebook/harvest3.jpg).
 
 summary.table$abundance_cells.mL[c(37:40,45:56)] <- summary.table$abundance_cells.mL[c(37:40,45:56)] * 50 # Prochlorococcus cultures were diluted 50X
 summary.table$abundance_cells.mL[c(41:44,57:60)] <- summary.table$abundance_cells.mL[c(41:44,57:60)] * 100 # Synechococcus cultures were diluted 100X
