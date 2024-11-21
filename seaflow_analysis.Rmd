@@ -1,0 +1,343 @@
+---
+title: "Seaflow Analysis"
+output: html_notebook
+---
+
+# Seaflow Analysis of Phytoplankton Carbon Content Using Flow Cytometry
+
+# Introduction
+
+Flow cytometry allows researchers to measure physical and chemical properties of cells as they pass through a laser. In this analysis, we aim to quantify carbon content per cell for different phytoplankton species using forward scatter data, which reflects cell size and shape. This study compares two flow cytometry instruments, 740 and 751, to evaluate if these measurements can help predict carbon content, a crucial factor in understanding the role of phytoplankton in carbon cycling.
+
+# Setup and Library Loading
+
+These libraries help streamline the analysis, manipulation, and visualization of data, making the code cleaner and easier to manage.
+
+```{r}
+library(tidyverse)    # For data manipulation}
+library(scales)       # For color transparency
+library(viridis)      # For color palette
+library(gridExtra)    # To arrange multiple plots in a single output
+library(purrr)
+library(dplyr)        #for data manipulation, especially with lists and pipes
+```
+
+# Setting the working directory
+
+This function sets the working directory, which is the folder where your R session will look for files and save outputs. By setting this path, you ensure that all file reading and writing operations are performed relative to this directory. This is particularly useful when you are working in a project folder, ensuring all files (like datasets and outputs) are organized in one place. Adjust this path as needed for your setup.
+
+```{r}
+path.to.git.repository <- "~/Documents/Codes/fsc-poc-calibration"
+setwd(path.to.git.repository)
+```
+
+# Loading the data
+
+```{r}
+poc <- read.csv("Qc-cultures.csv")
+```
+
+# Loading and Processing Culture Data
+
+The first block of code loops through two instruments (740 and 751), loading culture data specific to each instrument from CSV files named according to the instrument number (e.g., 740-cultures.csv for instrument 740).
+
+```{r}
+# Define a vector of instrument IDs (740 and 751) to load datasets for each instrument.
+instruments <- c("740", "751")
+
+# Loop through each instrument in the vector 'instruments'.
+for (inst in instruments) {
+  # Dynamically create the file name for each instrument and read in the corresponding data.
+  # Suppress column type output to keep the notebook clean.
+  cultures <- read_csv(paste0(inst, "-cultures.csv"), show_col_types = FALSE)
+  
+  # Print the data specification for 'cultures' to check the column types of each dataset.
+  print(spec(cultures))
+}
+
+```
+
+Each instrument generates data with different characteristics (e.g., fluorescence, forward scatter, side scatter) which we want to analyze and compare. The read_csv() is used to load the data and print(spec(cultures)) is used to check the data types, ensuring that numeric and categorical values are appropriately recognized.
+
+# Assigning Sample IDs Based on Instrument
+
+Next, we assign specific sample identifiers (Sample.ID) for each instrument to ensure consistency in labeling.
+
+```{r}
+cultures <- cultures %>%
+  mutate(Sample.ID = case_when(
+    inst == 740 ~ rep(c("Thalassiosira weissflogii", "Navicula transitans", 
+                        "Thalassiosira pseudonana (1135)", "Thalassiosira pseudonana (3367)", 
+                        "Phaedactylum tricornutum", "Micromonas pusilla", 
+                        "Prochlorococcus (AS9601)", "Prochlorococcus (1314)", 
+                        "Prochlorococcus (MED4)", "Prochlorococcus (NATL12A)", 
+                        "Synechococcus (WH8102)", "Synechococcus (WH7803)"), each = 2),
+    inst == 751 ~ rep(c("Thalassiosira weissflogii", "Navicula transitans", 
+                        "Thalassiosira pseudonana (1135)", "Thalassiosira pseudonana (3367)", 
+                        "Phaedactylum tricornutum", "Micromonas pusilla", 
+                        "Prochlorococcus (MED4)", "Prochlorococcus (AS9601)", 
+                        "Prochlorococcus (1314)", "Prochlorococcus (NATL12A)", 
+                        "Synechococcus (WH8102)", "Synechococcus (WH7803)"), each = 2)
+  ))
+
+```
+
+# Calculating Standard Deviation and Mean for Numeric Data
+
+For each sample, we calculate the standard deviation and mean of the numeric data (e.g., forward scatter, chlorophyll content, carbon content).
+
+```{r}
+# Calculate the standard deviation for each numeric group in 'cultures'
+cultures_sd <- cultures %>%
+  group_by(Sample.ID) %>%
+  summarize(across(where(is.numeric), ~ sd(.x, na.rm = TRUE)), .groups = 'drop') %>%
+  rename_with(~ paste0(.x, ".sd"), -Sample.ID)
+
+# Calculate the mean for each numeric group in 'cultures'
+cultures_mean <- cultures %>%
+  group_by(Sample.ID) %>%
+  summarize(across(where(is.numeric), ~ mean(.x, na.rm = TRUE)), .groups = 'drop')
+
+# Add the standard deviation values as new columns in 'cultures_mean'
+  cultures_mean <- cultures_mean %>%
+    inner_join(cultures_sd, by = "Sample.ID") %>%
+    rename(norm.fsc.sd = norm.fsc.sd, norm.chl.sd = norm.chl.sd)
+
+```
+
+The standard deviation (sd) measures the variability in the measurements, and the mean (mean) represents the central tendency of the data. These calculations are critical for understanding how consistent or variable the measurements are across samples and for error propagation in future analyses.
+
+# Merging with POC Data
+
+Merging Culture Data with POC (Particulate Organic Carbon) Data The poc dataset contains information on particulate organic carbon, which we want to link to the flow cytometry data by matching Sample.ID. This combined dataset allows for a comprehensive analysis of flow cytometry measurements (such as forward scatter) and biological metrics (such as carbon content per cell).
+
+```{r}
+# Merge with 'poc' data on 'Sample.ID' to combine related measurements
+merge_data <- poc %>%
+  inner_join(cultures_mean, by = "Sample.ID")
+
+ # Write the final merged data to a CSV file for the current instrument
+  merge_data %>%
+    select(Sample.ID, norm.fsc, norm.fsc.sd, norm.chl, norm.chl.sd, 
+           abundance_cells_mL_mean, abundance_cells_mL_sd, pgC_cell, pgN_cell, 
+           pgC_cell_sd, pgN_cell_sd) %>%
+    write_csv(paste0(inst, "-Qc-cultures.csv"))
+}
+```
+
+Merging ensures that we have a unified dataset that includes both flow cytometry measurements (e.g., forward scatter, chlorophyll) and the biological measurements (e.g., cell abundance, carbon content) for the same sample. This allows for more comprehensive analyses, such as understanding the relationship between flow cytometry metrics and biological content.
+
+# Loading Mie data
+
+Ensure that the file is present in your working directory.
+
+```{r}
+# Load the Mie theory data from CSV file
+mie <- read_csv("calibrated-mie.csv")
+```
+
+# Creating and Saving Plots
+
+Scatter plots show the relationship between normalized forward scatter (size indicator) and carbon content per cell. Error bars highlight variability, and a red line represents the Mie scattering model, a theoretical model for predicting cell carbon content based on scatter.
+
+```{r}
+# Define output PNG for side-by-side plots, double the width
+png("Qc-scatter.png", width = 18, height = 8, units = "in", res = 300)
+
+# Initialize list to store plots
+plots <- list()
+
+# Loop through each instrument (740 and 751)
+for (inst in c(740, 751)) {
+  
+  # Load culture data for each instrument
+  merge <- read_csv(paste0(inst, "-Qc-cultures.csv"))
+  
+  merge2 <- merge %>%
+    dplyr::filter(Sample.ID != "Phaeodactylum tricornutum") %>%
+    arrange(norm.fsc)
+  
+  # Create a ggplot for the current instrument
+  p <- ggplot(merge2, aes(x = norm.fsc, y = pgC_cell)) +
+    
+    # Add error bars for pgC.cell with standard deviations
+    geom_errorbar(aes(ymin = pgC_cell - pgC_cell_sd, ymax = pgC_cell + pgC_cell_sd), 
+                  width = 0, color = "grey", size = 1) +
+    geom_errorbarh(aes(xmin = norm.fsc - norm.fsc.sd, xmax = norm.fsc + norm.fsc.sd),
+                   height = 0, color = "grey", size = 1) +
+    
+    # Add lines for Mie-based model with upper, mid, and lower bounds
+    geom_line(data = mie, aes(x = scatter, y = !!sym(paste0("Qc_", inst, "_mid")), 
+                              color = "Mie-based model (n = 1.38 ± 0.3)"), 
+              size = 1.2) +
+    geom_line(data = mie, aes(x = scatter, y = !!sym(paste0("Qc_", inst, "_upr"))), 
+              color = "grey", size = 1, show.legend = FALSE) +
+    geom_line(data = mie, aes(x = scatter, y = !!sym(paste0("Qc_", inst, "_lwr"))), 
+              color = "grey", size = 1, show.legend = FALSE) +
+    
+    # Add larger points for each culture sample with semi-transparent colors
+    geom_point(aes(fill = Sample.ID), shape = 21, size = 8, 
+               color = "black", alpha = 0.7) +  # Larger points and slightly more opaque
+    scale_fill_viridis_d(option = "D", begin = 0.3, end = 0.9) +
+    
+    # Custom legend entry for the Mie-based model
+    scale_color_manual(values = c("Mie-based model (n = 1.38 ± 0.3)" = "red3")) +
+    
+    # Set log scales for x and y axes
+    scale_x_log10(limits = c(0.002, 10), 
+                  breaks = c(0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10),
+                  labels = scales::label_number()) +
+    scale_y_log10(limits = c(0.005, 100),
+                  breaks = c(0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100),
+                  labels = scales::label_number()) +
+    
+    # Add labels and title
+    labs(x = "Normalized scatter (dimensionless)", 
+         y = expression(paste("Qc (pgC cell"^{-1},")")),
+         title = paste("Instrument:", inst)) +
+    
+    # Customize theme for clarity and format
+    theme_classic(base_size = 14) +
+    theme(
+      panel.border = element_rect(color = "black", fill = NA, size = 1),
+      legend.position = c(0.2, 0.7),  # Position legend in the top-left corner
+      legend.background = element_blank(),  # No legend background box
+      legend.title = element_blank(),
+      plot.title = element_text(hjust = 0.5, size = 14),
+      axis.text = element_text(size = 10),
+      axis.title = element_text(size = 12)
+    )
+  
+  # Save the plot in the list
+  plots[[as.character(inst)]] <- p
+}
+```
+
+# Arranging and Saving Multiple Plots
+
+Finally, the plots for both instruments (740 and 751) are arranged side by side in a single PNG file for comparison.
+
+```{r}
+grid.arrange(grobs = plots, ncol = 2)
+dev.off()
+```
+
+# Linear regression
+
+This code focuses on analyzing flow cytometry data to explore correlations between normalized forward scatter values (norm.fsc) and carbon content per cell (pgC_cell). The code loops through each instrument to calculate correlation and regression statistics, visualizes the data with scatter plots, using error bars and reference model lines, performs regression analysis on both original and log-transformed data.
+
+```{r}
+
+# Initialize list to store plots
+plots <- list()
+
+generate_plot <- function(inst, merge2, mie) {
+  # Generate column name dynamically
+  col_name <- paste0("Qc_", inst, "_mid")
+  
+  # Match scatter intervals to mie scatter values
+  id <- findInterval(merge2$norm.fsc, mie$scatter)
+  id[is.na(id)] <- 1  # Replace NA indices with a valid default
+  
+  # Add predicted values to merge2 using the mie table
+  merge2 <- merge2 %>%
+    mutate(predicted = mie[id, col_name] %>% pull())  # Ensure numeric type
+  
+  # Linear regression
+  reg <- lm(pgC_cell ~ predicted, data = merge2)
+  print(paste("Regression summary for instrument", inst))
+  print(summary(reg))
+  
+
+```
+
+This function (generate_plot) automates the process of creating scatter plots for each instrument, using dynamic column naming to allow for specific regression modeling. Data Matching: The code matches the norm.fsc values in merge2 to Mie model values in mie to get predicted Qc values. Linear Regression: A linear regression of pgC_cell against predicted Qc values is used to assess how well the predicted values align with measured data.
+
+# Plotting Data with Scatter Plots and Error Bars
+
+```{r}
+  # Generate the ggplot
+  p <- merge2 %>%
+    ggplot(aes(x = norm.fsc, y = pgC_cell)) +
+    
+    # Add vertical error bars
+    geom_errorbar(aes(ymin = pgC_cell - pgC_cell_sd, ymax = pgC_cell + pgC_cell_sd), 
+                  color = "grey", width = 0) +
+    
+    # Add horizontal error bars
+    geom_errorbarh(aes(xmin = norm.fsc - norm.fsc.sd, xmax = norm.fsc + norm.fsc.sd), 
+                   color = "grey", height = 0) +
+    
+    # Add larger points with transparency
+    geom_point(aes(fill = Sample.ID), size = 8, shape = 21, alpha = 0.7) +
+    
+    # Set color scale for points with title for the legend
+    scale_fill_viridis_d(name = "Sample ID") +
+    
+    # Log scale for x and y axes with limits and breaks
+    scale_x_log10(limits = c(0.002, 10), 
+                  breaks = c(0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10)) +
+    scale_y_log10(limits = c(0.005, 100), 
+                  breaks = c(0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100)) +
+    
+    # Axis labels and plot title
+    labs(x = "Normalized scatter (dimensionless)", 
+         y = expression(paste("Qc (pgC cell"^{-1}, ")")),
+         title = paste("Instrument", inst)) +
+    
+    # Add red reference line for the Mie-based model
+    geom_abline(intercept = 0.5239, slope = 1.0462, color = "red3", size = 1) +
+    
+    # Apply classic theme to add a border around the plot
+    theme_classic(base_size = 14) +
+    
+    # Customize theme elements for legend, plot border, and text size
+    theme(
+      panel.border = element_rect(color = "black", fill = NA, size = 1),  # Border around the plot
+      legend.position = c(0.2,0.7),                                          # Position legend on the right
+      legend.background = element_blank(),                                # No background box for the legend
+      legend.title = element_text(size = 16),                             # Increase legend title font size
+      legend.text = element_text(size = 14),                              # Increase legend text font size
+      plot.title = element_text(hjust = 0.5, size = 16),                  # Centered and larger title
+      axis.text = element_text(size = 12),                                # Axis text size
+      axis.title = element_text(size = 14),                               # Axis title size
+      panel.grid.major = element_line(color = "grey", size = 0.5),        # Add major grid lines
+      panel.grid.minor = element_line(color = "lightgrey", size = 0.25)   # Add minor grid lines
+    ) +
+    
+    # Adjust legend to control point size in the legend
+    guides(fill = guide_legend(title = "Sample ID", override.aes = list(size = 5)))
+  
+  # Return the plot object
+  return(p)
+}
+
+# Generate plots for both instruments
+plots <- map(c("740", "751"), ~generate_plot(.x, merge2, mie))
+
+# Save all plots in a single PNG file using gridExtra
+png("Qc-scatter-combined.png", width = 24, height = 10, units = "in", res = 300)
+grid.arrange(grobs = plots, ncol = 2)  # Arrange plots side by side
+dev.off()
+
+```
+
+# Regression Analysis on Log-Transformed Data
+
+The relationship between forward scatter and carbon content might be better explained on a log-log scale, particularly if the data spans several orders of magnitude. This section applies log transformation to both variables, performs a linear regression, and then prints the summary, providing insight into how well forward scatter can predict carbon content.
+
+```{r}
+# Log-transformed regression for both instruments
+for (inst in instruments) {
+  log_reg <- merge2 %>%
+    dplyr::filter(pgC_cell > 0, norm.fsc > 0) %>%  # Remove invalid values for log
+    mutate(log_pgC.cell = log10(pgC_cell), log_norm.fsc = log10(norm.fsc)) %>%
+    lm(log_pgC.cell ~ log_norm.fsc, data = .)
+  
+  print(paste("Log-transformed regression summary for instrument", inst))
+  print(summary(log_reg))
+}
+
+```
+
+Data Preparation for Log Transformation: Invalid values (pgC_cell or norm.fsc \<= 0) are filtered out to ensure log transformation can be performed without issues. Log-Transformed Regression: A linear regression is conducted on the log-transformed data, allowing for interpretation of the relationship between norm.fsc and pgC_cell in a log-log scale.

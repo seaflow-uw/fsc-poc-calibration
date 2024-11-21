@@ -1,0 +1,240 @@
+---
+title: "Influx Analysis"
+output: html_notebook
+---
+
+# Setup and Library Loading
+
+First, we load the necessary libraries that will help us manipulate the data and create visualizations.
+
+```{r}
+library(tidyverse)  # Loads several packages like ggplot2, dplyr, etc.
+library(dplyr)      # Used for data manipulation
+library(scales)     # Provides scale functions for plotting
+library(viridis)    # Provides color palettes
+library(ggplot2)    # For creating plots
+library(cowplot)    #For combining plots
+
+# Set working directory
+path_to_git_repository<-"C:/Users/SNEHA/OneDrive/Documents/seaflow/fsc-poc-calibration"
+setwd(path_to_git_repository)
+```
+
+This code loads the necessary libraries (tidyverse, dplyr, scales, viridis, ggplot2, cowplot) that provide functions for data manipulation, plotting, and handling color scales. We also set the working directory to the location where our data files are stored.
+
+# Reading Data
+
+Next, we read the data files into R using read_csv(). These files contain the data we will analyze. We also rename "Sample ID" in poc to "Sample.ID" for consistency in downstream operations.
+
+```{r}
+# Read in the datasets
+poc <- read_csv("poc-data.csv")
+cultures <- read_csv("influx-cultures.csv")
+# Rename the column so that both datasets have the same column names for merging
+poc <- poc %>% rename("Sample.ID" = "Sample ID")
+
+```
+
+Here, we load two CSV files: poc-data.csv (which contains particulate organic carbon data) and influx-cultures.csv (which contains culture data related to cell abundance and other variables). poc-data.csv: Contains particulate organic carbon (POC) data and nitrogen concentrations across different samples, which are important to calculate cellular C and N quotas. influx-cultures.csv: Contains cell count and scatter information for different samples from the flow cytometer, which are required to analyze relationships between scatter data and cell quotas.
+
+# Data Transformation: Adding Sample ID Categories
+
+We will add a new column, `Sample.ID`, to the `cultures` data. This will categorize the different culture samples. Flow cytometry samples often contain multiple replicates for each biological sample. Adding a Sample.ID variable that represents each sample type allows us to group and analyze data by biological sample type, enhancing interpretability. Replication Counts (times argument): Ensures each Sample.ID has the correct number of entries, facilitating accurate calculations in summary statistics.
+
+```{r}
+# Add Sample ID categories to cultures data
+cultures <- cultures %>%
+  mutate(Sample.ID = rep(
+    c("EHUX", "LICMO", "Micromonas pusilla", "Navicula transitans", 
+      "Phaeodactylum tricornutum", "Thalassiosira pseudonana (1135)", 
+      "Thalassiosira pseudonana (3367)", "TW 3365", 
+      "Prochlorococcus (1314)", "Synechococcus (WH7803)", 
+      "Prochlorococcus (AS9601)", "Prochlorococcus (MED4)", 
+      "Prochlorococcus (NATL12A)", "Synechococcus (WH8102)"),
+    times = c(2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 2, 2)  # Adjusted replicates to sum to 30
+  ))
+
+```
+
+# Summarizing the POC Data
+
+We will now calculate summary statistics for the poc dataset, such as the mean and standard deviation for carbon and nitrogen concentrations. This helps quantify typical values and variation for each sample type, providing reliable data for later calculations of cell quotas.
+
+```{r}
+# Rename the column in poc_summary to match cultures_summary
+poc_summary <- poc_summary %>%
+  rename(Sample.ID = `Sample ID`)
+
+# Summary calculation for POC data
+poc_summary <- poc %>%
+  group_by(Sample.ID) %>%
+  summarize(
+    C_ug_ml_mean = mean(`C (ug/ml)`, na.rm = TRUE),
+    C_ug_ml_sd = sd(`C (ug/ml)`, na.rm = TRUE),
+    N_ug_ml_mean = mean(`N (ug/ml)`, na.rm = TRUE),
+    N_ug_ml_sd = sd(`N (ug/ml)`, na.rm = TRUE)
+  )
+
+```
+
+In this code, we use group_by() to group the poc data by Sample.ID, and then we calculate the mean and standard deviation for the C (ug/ml) and N (ug/ml) concentrations within each sample group. The na.rm = TRUE argument ensures that missing values (NA) are ignored during the calculations.
+
+# Summarizing the Cultures Data
+
+Next, we calculate the summary statistics for the cultures dataset, including cell abundance and normalized forward scatter values.Similar to the POC data, we summarize the cultures data by calculating the mean and standard deviation of key parameters:
+
+abundance_cells.mL: Cell density in each sample (cells/mL), critical for calculating cell quotas. norm.fsc and norm.chl: Normalized forward scatter and chlorophyll values, indicators of cell size and chlorophyll content, respectively. These will help relate scatter data to cellular carbon content.
+
+```{r}
+# Summary calculation for cultures data
+cultures_summary <- cultures %>%
+  group_by(Sample.ID) %>%
+  summarize(
+    abundance_cells_mL_mean = mean(abundance_cells.mL, na.rm = TRUE),
+    abundance_cells_mL_sd = sd(abundance_cells.mL, na.rm = TRUE),
+    norm_fsc_mean = mean(norm.fsc, na.rm = TRUE),
+    norm_fsc_sd = sd(norm.fsc, na.rm = TRUE),
+    norm_chl_mean = mean(norm.chl, na.rm = TRUE),
+    norm_chl_sd = sd(norm.chl, na.rm = TRUE)
+  )
+
+```
+
+Similar to the previous step, group_by() is used to group by Sample.ID, and summarize() calculates the mean and standard deviation for various measurements such as cell abundance, forward scatter (norm.fsc), and chlorophyll values (norm.chl).
+
+# Merging the Data
+
+Now we merge the two summary tables (poc_summary and cultures_summary) into a single dataset based on the Sample.ID.
+
+```{r}
+# Merge summaries for POC and cultures data
+merged_data <- inner_join(cultures_summary, poc_summary, by ="Sample.ID")
+```
+
+We use inner_join() to merge the data on the Sample.ID column. This combines the summary statistics from both the POC and cultures datasets into a single data frame called merged_data. Merging cultures_summary and poc_summary brings together carbon, nitrogen, and scatter-related data, creating a single data frame (merged_data) that contains all relevant information for analysis.
+
+# Calculating Cell Quotas and Standard Deviations
+
+We will calculate the per-cell quotas for carbon and nitrogen (pgC_cell and pgN_cell) and their standard deviations.
+
+```{r}
+# Calculate cell quotas and standard deviation for pgC and pgN per cell
+merged_data <- merged_data %>%
+  mutate(
+    pgC_cell = 10^6 * C_ug_ml_mean / abundance_cells_mL_mean,
+    pgN_cell = 10^6 * N_ug_ml_mean / abundance_cells_mL_mean,
+    pgC_cell_sd = pgC_cell * sqrt((C_ug_ml_sd / C_ug_ml_mean)^2 + 
+                                    (abundance_cells_mL_sd / abundance_cells_mL_mean)^2),
+    pgN_cell_sd = pgN_cell * sqrt((N_ug_ml_sd / N_ug_ml_mean)^2 + 
+                                    (abundance_cells_mL_sd / abundance_cells_mL_mean)^2)
+  )
+
+```
+
+In this step, we calculate the carbon and nitrogen quotas per cell by dividing the average concentration (`C_ug_ml_mean`, `N_ug_ml_mean`) by the average cell count (`abundance_cells_mL_mean`) and converting the units to pg per cell.
+
+We also calculate the standard deviations (`pgC_cell_sd` and `pgN_cell_sd`) using error propagation, which accounts for uncertainties in both concentration and cell count measurements.
+
+# Saving the Processed Data
+
+Finally, we save the processed data into CSV files for future use.
+
+```{r}
+merged_data %>%
+  select(Sample.ID, norm_fsc_mean, norm_fsc_sd, norm_chl_mean, norm_chl_sd, 
+         abundance_cells_mL_mean, abundance_cells_mL_sd, pgC_cell, pgN_cell, 
+         pgC_cell_sd, pgN_cell_sd) %>%
+  write_csv("Influx-Qc-cultures.csv")
+
+merged_data %>%
+  select(Sample.ID, abundance_cells_mL_mean, abundance_cells_mL_sd, 
+         pgC_cell, pgN_cell, pgC_cell_sd, pgN_cell_sd) %>%
+  write_csv("Qc-cultures.csv")
+
+```
+
+Influx-Qc-cultures.csv: Contains normalized scatter and chlorophyll information alongside cell quotas.
+
+Qc-cultures.csv: Focused on cell counts and cell quotas for downstream analysis.
+
+# Plotting Data
+
+Next, we will create plots to visualize the data, comparing the modeled and observed values of carbon content.The goal of these plots is to visualize how well the Mie model (which theoretically relates cell scatter properties to cell size and composition) matches the experimental scatter data.
+
+```{r}
+# Define file paths and set working directory
+path.to.git.repository <- "~/Documents/Codes/fsc-poc-calibration"
+setwd(path.to.git.repository)
+
+# Read data for plotting
+mie <- read_csv("calibrated-mieINFLUX.csv")
+merge <- read_csv("Influx-Qc-cultures.csv") %>%
+  filter(Sample.ID != "Phaeodactylum tricornutum") %>% # Remove non-spherical cells
+  arrange(norm.fsc)
+```
+
+In this section, we read the mie data, which contains the Mie scattering model parameters, and the merged_data for plotting. We also filter out non-spherical cells to ensure that we only include the appropriate samples.
+
+# Generating Scatter Plots for Each Instrument
+
+This block generates scatter plots comparing the normalized forward scatter (norm.fsc) and particulate organic carbon content per cell (pgC.cell) for each instrument (Leo and Penny). It includes error bars (for both the x and y axes) to show the uncertainty in the data. Mie model lines for each instrument are overlaid on the plot to compare the observed data with modeled values. The plots are generated in a loop, with each plot saved to a PNG file (INFLUX_Qc-scatter.png).
+
+```{r}
+
+# Create a list to hold the plots
+plots <- list()
+
+# Loop through each instrument and create plots
+for(inst in c("Leo", "Penny")) {
+  
+  # Generate the plot
+  p <- ggplot(merge, aes(x = norm_fsc_mean, y = pgC_cell)) +
+    geom_errorbar(aes(ymin = pgC_cell - pgC_cell_sd, ymax = pgC_cell + pgC_cell_sd), 
+                  color = 'darkgrey', width = 0.05) +
+    geom_errorbarh(aes(xmin = norm_fsc_mean - norm_fsc_sd, xmax = norm_fsc_mean + norm_fsc_sd), 
+                   color = 'darkgrey', height = 0.05) +
+    # Add the Mie-based model lines (red line for mid, dashed lines for upr and lwr)
+    geom_line(data = mie, aes(x = scatter, y = .data[[paste0("Qc_", inst, "_mid")]], 
+                              color = "Mie-based model (n = 1.38 ± 0.3)"), size = 1) +
+    geom_line(data = mie, aes(x = scatter, y = .data[[paste0("Qc_", inst, "_upr")]]), 
+              color = 'grey', linetype = "dashed", size = 1, show.legend = FALSE) +
+    geom_line(data = mie, aes(x = scatter, y = .data[[paste0("Qc_", inst, "_lwr")]]), 
+              color = 'grey', linetype = "dashed", size = 1, show.legend = FALSE) +
+    geom_point(aes(fill = Sample.ID), size = 6, shape = 21, color = "black") +
+    # Adjust color fill for Sample.ID and add the red line to legend
+    scale_fill_viridis_d(option = "D", alpha = 0.5) +
+    scale_color_manual(values = c("Mie-based model (n = 1.38 ± 0.3)" = "red3")) + # Custom legend label
+    scale_x_log10(limits = c(0.002, 10), 
+                  breaks = c(0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10)) +
+    scale_y_log10(limits = c(0.005, 100), 
+                  breaks = c(0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 1000)) +
+    labs(title = inst, 
+         x = "Normalized scatter (dimensionless)", 
+         y = expression(paste("Qc (pgC cell"^{-1},")"))) +
+    theme_classic() +  # Ensure white background
+    theme(
+      legend.position = c(0.15, 0.7),  # Top-left corner inside the box
+      legend.background = element_blank(),  # Remove legend background box
+      legend.title = element_blank(), # Remove "Sample.ID" title
+      plot.title = element_text(hjust = 0.5, size = 14),
+      axis.text = element_text(size = 10),
+      axis.title = element_text(size = 12),
+      panel.border = element_rect(color = "black", fill = NA, size = 1) # Box settings around the plot
+    )
+  
+  # Save the plot in the list
+  plots[[inst]] <- p
+}
+
+# Combine the plots side by side without labels A and B
+combined_plot <- plot_grid(plots$Leo, plots$Penny, ncol = 2)
+
+# Save the combined plot to a PNG file with white background
+ggsave("INFLUX_Qc-scatter_combined_with_box.png", combined_plot, 
+       width = 18, height = 8, dpi = 300, bg = "white")  # Explicitly set bg to white.
+
+```
+
+The plot illustrates the relationship between normalized forward scatter (a proxy for cell size) and carbon content per cell (pgC/cell) across different sample types. Each point represents a sample, colored by `Sample.ID`, showing the observed normalized forward scatter vs. the measured carbon content per cell. Error bars around each point indicate the variability in both scatter and carbon content, which provides a sense of the measurement precision. The red line represents the Mie-based model, which predicts the expected relationship between scatter and carbon content for spherical particles based on theoretical calculations. Dashed lines (gray) show the upper and lower bounds of the Mie model, reflecting the model’s range of uncertainty. Two plots (one for each instrument: `Leo` and `Penny`) allow for side-by-side comparison, showing whether different instruments produce similar data and how they align with the Mie model.
+
+The plot helps assess how well the theoretical Mie model (designed for spherical cells) aligns with actual data. If points cluster along the red line, it suggests that the Mie model accurately predicts the relationship for those cell types. If there are consistent deviations, it might indicate that the model needs refinement or that certain cell types deviate from the assumptions of the Mie model (e.g., non-spherical shape, other optical properties).
